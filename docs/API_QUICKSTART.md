@@ -14,14 +14,11 @@
 2. 确认健康检查可用：
 
 ```powershell
-curl.exe http://localhost:8080/health
+curl.exe -sS http://localhost:8080/health
 ```
 
-期望输出：
-
-```text
-ok
-```
+- 期望：HTTP 200
+- 关键返回：纯文本 `ok`
 
 3. 需要准备 3 类用户：
    - internal 用户（内部，`user_type=internal`）用于调用内部接口（非 `/client/**`、非 `/preview/**`）。
@@ -29,7 +26,7 @@ ok
    - external 用户（外协，`user_type=external`）用于调用 `/preview/**` 的 external 预览。
 
 > 说明：V1 没有“创建用户/项目/案件”的公开接口。本手册默认这些数据来自 **测试用例 seed/数据库 seed**。
-> 
+>
 > - 可参考集成测试的 seed 逻辑（它们会通过 JDBC 直接插入 `app_user/project/case` 等数据）：
 >   - `src/api/src/test/java/com/secp/api/it/InstructionTaskEvidenceIT.java`
 >   - `src/api/src/test/java/com/secp/api/it/ClientApiIsolationIT.java`
@@ -44,7 +41,7 @@ ok
 ## 2) 环境变量（手册中用到的 PowerShell 变量）
 
 > 说明：为了命令可复制，本文统一用 PowerShell 变量保存 Base URL、Content-Type 和 3 类 token。
-> 
+>
 > 若接口返回字段名与示例不同，可按实际返回调整（本文示例不依赖 jq）。
 
 ```powershell
@@ -79,24 +76,20 @@ $ExternalToken = "<PASTE_EXTERNAL_JWT_HERE>"
 1) 发送验证码：
 
 ```powershell
-curl.exe -sS -X POST "$Base/auth/sms/send" ^
-  -H "Content-Type: $Json" ^
-  -d '{"phone":"13900000002"}'
+curl.exe -sS -X POST "$Base/auth/sms/send" -H "Content-Type: $Json" -d '{"phone":"13900000002"}'
 ```
+
+- 期望：HTTP 200
+- 关键返回：`ok`（示例：`{"ok":true}`）
 
 2) 校验验证码并获取 token：
 
 ```powershell
-curl.exe -sS -X POST "$Base/auth/sms/verify" ^
-  -H "Content-Type: $Json" ^
-  -d '{"phone":"13900000002","code":"<PASTE_CODE_FROM_LOGS>"}'
+curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phone":"13900000002","code":"<PASTE_CODE_FROM_LOGS>"}'
 ```
 
-返回示例：
-
-```json
-{"token":"<JWT>"}
-```
+- 期望：HTTP 200
+- 关键返回：`token`（示例：`{"token":"<JWT>"}`）
 
 把返回的 `token` 人工复制到 `$InternalToken`。
 
@@ -108,18 +101,20 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" ^
 1) 发送验证码：
 
 ```powershell
-curl.exe -sS -X POST "$Base/auth/sms/send" ^
-  -H "Content-Type: $Json" ^
-  -d '{"phone":"13900000001"}'
+curl.exe -sS -X POST "$Base/auth/sms/send" -H "Content-Type: $Json" -d '{"phone":"13900000001"}'
 ```
+
+- 期望：HTTP 200
+- 关键返回：`ok`（示例：`{"ok":true}`）
 
 2) 校验验证码并获取 token：
 
 ```powershell
-curl.exe -sS -X POST "$Base/auth/sms/verify" ^
-  -H "Content-Type: $Json" ^
-  -d '{"phone":"13900000001","code":"<PASTE_CODE_FROM_LOGS>"}'
+curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phone":"13900000001","code":"<PASTE_CODE_FROM_LOGS>"}'
 ```
+
+- 期望：HTTP 200
+- 关键返回：`token`（示例：`{"token":"<JWT>"}`）
 
 把返回的 `token` 人工复制到 `$ClientToken`。
 
@@ -142,26 +137,11 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" ^
 > 你需要一个已存在的 `projectId`（来自测试 seed/数据库数据）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "refType":"project",
-    "refId":"<PROJECT_ID>",
-    "title":"Instr (project)",
-    "items":[
-      {"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}
-    ]
-  }'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"project","refId":"<PROJECT_ID>","title":"Instr (project)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
 ```
 
-返回示例：
-
-```json
-{"instructionId":"<INSTRUCTION_ID>"}
-```
-
-把 `instructionId` 人工复制出来，后面用作 `{instructionId}`。
+- 期望：HTTP 201
+- 关键返回：`instructionId`
 
 > 重点：当 refType=project 时，后续 `issue` 可以不传 `targetCaseId`（或传 null），会生成 **project-only task**（其 `caseId` 可能为 null）。
 
@@ -170,20 +150,13 @@ curl.exe -sS -X POST "$Base/instructions" ^
 > 你需要一个已存在的 `caseId`（且该 case 必须存在于数据库中）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "refType":"case",
-    "refId":"<CASE_ID>",
-    "title":"Instr (case)",
-    "items":[
-      {"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}
-    ]
-  }'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"case","refId":"<CASE_ID>","title":"Instr (case)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
 ```
 
-### 4.2 下发指令 `POST /instructions/{id}/issue`（必须包含 Idempotency-Key）
+- 期望：HTTP 201
+- 关键返回：`instructionId`
+
+### 4.2 下发指令 `POST /instructions/{instructionId}/issue`（必须包含 Idempotency-Key）
 
 - Header：`Idempotency-Key` **必填**
 - Body：可选。refType=project 时可传 `{"targetCaseId":null}` 生成 project-only task。
@@ -192,69 +165,47 @@ curl.exe -sS -X POST "$Base/instructions" ^
 
 ```powershell
 $Idem = [guid]::NewGuid().ToString()
-$Idem
 ```
 
 下发（project-only 示例）：
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions/<INSTRUCTION_ID>/issue" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -H "Idempotency-Key: $Idem" ^
-  -d '{"targetCaseId":null}'
+curl.exe -sS -X POST "$Base/instructions/<INSTRUCTION_ID>/issue" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $Idem" -d '{"targetCaseId":null}'
 ```
 
-返回示例（重点字段）：
-
-```json
-{"instructionId":"<INSTRUCTION_ID>","version":1,"taskIds":["<TASK_ID>"]}
-```
+- 期望：HTTP 200
+- 关键返回：`instructionId` / `version` / `taskIds`（数组）
 
 **重放验证（不应重复创建 task）**：用同一个 `$Idem` 再调用一次，应返回完全相同的响应体（至少 `taskIds` 一致）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions/<INSTRUCTION_ID>/issue" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -H "Idempotency-Key: $Idem" ^
-  -d '{"targetCaseId":null}'
+curl.exe -sS -X POST "$Base/instructions/<INSTRUCTION_ID>/issue" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $Idem" -d '{"targetCaseId":null}'
 ```
+
+- 期望：HTTP 200（replay）
+- 关键返回：与第一次一致（尤其是 `taskIds`）
 
 ### 4.3 查询我的任务 `GET /me/tasks`
 
 ```powershell
-curl.exe -sS "$Base/me/tasks" ^
-  -H "Authorization: Bearer $InternalToken"
+curl.exe -sS -X GET "$Base/me/tasks" -H "Authorization: Bearer $InternalToken"
 ```
 
-说明：
-- project-only task 的 `caseId` 可能为 `null`。
-- 你也可以用 query 参数过滤：`status`、`overdueOnly`、`projectId`、`caseId`。
+- 期望：HTTP 200
+- 关键返回：数组；每项包含 `taskId` / `projectId` / `caseId`（project-only task 的 `caseId` 可能为 null）
 
 ### 4.4 上传证据 `POST /evidences`
 
-> 注意：接口路径是 `/evidences`（不是 `/evidence`）。
+> 已核对：接口真实路径为 `/evidences`（`EvidenceController` 的 `@RequestMapping("/evidences")`）。
 
 project-only evidence 示例（`caseId=null`，`projectId` 必填）：
 
 ```powershell
-curl.exe -sS -X POST "$Base/evidences" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "projectId":"<PROJECT_ID>",
-    "caseId":null,
-    "title":"Evidence (project-only)",
-    "fileId":null
-  }'
+curl.exe -sS -X POST "$Base/evidences" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"projectId":"<PROJECT_ID>","caseId":null,"title":"Evidence (project-only)","fileId":null}'
 ```
 
-返回示例：
-
-```json
-{"evidenceId":"<EVIDENCE_ID>"}
-```
+- 期望：HTTP 201
+- 关键返回：`evidenceId`
 
 ### 4.5 回款（绑定 case 的红线说明）
 
@@ -268,89 +219,44 @@ curl.exe -sS -X POST "$Base/evidences" ^
 接口：`POST /tasks/{taskId}/payments`
 
 ```powershell
-curl.exe -sS -X POST "$Base/tasks/<PROJECT_ONLY_TASK_ID>/payments" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "amount":12.34,
-    "paidAt":"2026-01-11T12:00:00+08:00",
-    "payChannel":"BANK",
-    "payerName":"payer",
-    "bankLast4":"1234",
-    "clientNote":"client-note",
-    "internalNote":"internal-note",
-    "isClientVisible":true
-  }'
+curl.exe -sS -X POST "$Base/tasks/<PROJECT_ONLY_TASK_ID>/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"amount":12.34,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payer","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
 ```
 
-期望：HTTP 422，响应包含 `UNPROCESSABLE_ENTITY`。
+- 期望：HTTP 422
+- 关键返回：`error=UNPROCESSABLE_ENTITY`，并包含 `reason`（示例 reason：`TASK_HAS_NO_CASE`）
 
 #### 4.5.2 绑定 case 的 payment create 示例（使用已存在接口，不发明）
 
 你可以选择两种**已存在**的内部入口：
 
-A) 按任务创建（推荐用于闭环演示）：`POST /tasks/{taskId}/payments`
+A) 按任务创建（用于闭环演示）：`POST /tasks/{taskId}/payments`
 
 ```powershell
-curl.exe -sS -X POST "$Base/tasks/<CASE_TASK_ID>/payments" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "amount":100.00,
-    "paidAt":"2026-01-11T12:00:00+08:00",
-    "payChannel":"BANK",
-    "payerName":"payerA",
-    "bankLast4":"1234",
-    "clientNote":"client-note",
-    "internalNote":"internal-note",
-    "isClientVisible":true
-  }'
+curl.exe -sS -X POST "$Base/tasks/<CASE_TASK_ID>/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"amount":100.00,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payerA","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
 ```
 
-B) 直接按 projectId+caseId 创建：`POST /payments`
+- 期望：HTTP 200
+- 关键返回：`paymentId`
+
+B) 直接按 projectId+caseId 创建：`POST /payments`（可选 `Idempotency-Key`）
 
 ```powershell
-curl.exe -sS -X POST "$Base/payments" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "projectId":"<PROJECT_ID>",
-    "caseId":"<CASE_ID>",
-    "amount":100.00,
-    "paidAt":"2026-01-11T12:00:00+08:00",
-    "payChannel":"BANK",
-    "payerName":"payerA",
-    "bankLast4":"1234",
-    "clientNote":"client-note",
-    "internalNote":"internal-note",
-    "isClientVisible":true
-  }'
+$IdemPay = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $IdemPay" -d '{"projectId":"<PROJECT_ID>","caseId":"<CASE_ID>","amount":100.00,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payerA","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
 ```
 
-返回示例：
-
-```json
-{"paymentId":"<PAYMENT_ID>"}
-```
+- 期望：HTTP 200
+- 关键返回：`paymentId`
 
 #### 4.5.3 payment 更正示例（corrected_from_payment_id）
 
-接口：`POST /payments/{paymentId}/correct?reason=...`
-
-> 可选支持 `Idempotency-Key`（建议在生产调用中带上）。
+接口：`POST /payments/{paymentId}/correct?reason=...`（可选 `Idempotency-Key`）
 
 ```powershell
-$Idem2 = [guid]::NewGuid().ToString()
-curl.exe -sS -X POST "$Base/payments/<PAYMENT_ID>/correct?reason=fix" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Idempotency-Key: $Idem2"
+$Idem2 = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments/<PAYMENT_ID>/correct?reason=fix" -H "Authorization: Bearer $InternalToken" -H "Idempotency-Key: $Idem2"
 ```
 
-返回示例：
-
-```json
-{"newPaymentId":"<NEW_PAYMENT_ID>"}
-```
+- 期望：HTTP 200
+- 关键返回：`newPaymentId`
 
 > 说明：更正不是 UPDATE 原 payment 核心字段，而是新增一条 payment，并用 `corrected_from_payment_id` 关联旧记录。
 
@@ -363,59 +269,55 @@ curl.exe -sS -X POST "$Base/payments/<PAYMENT_ID>/correct?reason=fix" ^
 ### 5.1 列出项目 `GET /client/projects`
 
 ```powershell
-curl.exe -sS "$Base/client/projects" ^
-  -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects" -H "Authorization: Bearer $ClientToken"
 ```
 
-从返回列表中人工复制 `id` 作为 `{projectId}`。
+- 期望：HTTP 200
+- 关键返回：数组；每项至少包含 `id`（projectId）
 
 ### 5.2 查看回款明细 `GET /client/projects/{projectId}/payments`
 
 - 可选 query 参数：`caseId`（如果你希望只看某个 case 的回款）。
 
 ```powershell
-curl.exe -sS "$Base/client/projects/<PROJECT_ID>/payments" ^
-  -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/<PROJECT_ID>/payments" -H "Authorization: Bearer $ClientToken"
 ```
+
+- 期望：HTTP 200
+- 关键返回：数组；每项包含 `paymentId` / `paidAt` / `amount` / `payChannel` / `payerName` / `bankLast4` / `clientNote` / `correctedFlag`
 
 如需带 caseId：
 
 ```powershell
-curl.exe -sS "$Base/client/projects/<PROJECT_ID>/payments?caseId=<CASE_ID>" ^
-  -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/<PROJECT_ID>/payments?caseId=<CASE_ID>" -H "Authorization: Bearer $ClientToken"
 ```
+
+- 期望：HTTP 200
+- 关键返回：同上
 
 强调：
 - 只返回“有效 payment”（如果某条 payment 被更正了，旧记录不会出现在列表里）。
 - 只返回 `is_client_visible=true` 的 payment。
-
-从返回中人工复制 `paymentId` 作为 `{paymentId}`。
 
 ### 5.3 发起对账疑问 `POST /client/payments/{paymentId}/disputes`
 
 > 建议带 `Idempotency-Key`，避免重复提交。
 
 ```powershell
-$Idem3 = [guid]::NewGuid().ToString()
-curl.exe -sS -X POST "$Base/client/payments/<PAYMENT_ID>/disputes" ^
-  -H "Authorization: Bearer $ClientToken" ^
-  -H "Content-Type: $Json" ^
-  -H "Idempotency-Key: $Idem3" ^
-  -d '{"title":"对账争议","message":"请核对金额"}'
+$Idem3 = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/client/payments/<PAYMENT_ID>/disputes" -H "Authorization: Bearer $ClientToken" -H "Content-Type: $Json" -H "Idempotency-Key: $Idem3" -d '{"title":"对账争议","message":"请核对金额"}'
 ```
 
-返回示例：
-
-```json
-{"disputeId":"<DISPUTE_ID>","status":"OPEN"}
-```
+- 期望：HTTP 201
+- 关键返回：`disputeId` / `status`（示例：`OPEN`）
 
 ### 5.4 查询投诉/对账记录 `GET /client/complaints`
 
 ```powershell
-curl.exe -sS "$Base/client/complaints" ^
-  -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/complaints" -H "Authorization: Bearer $ClientToken"
 ```
+
+- 期望：HTTP 200
+- 关键返回：数组；每项包含 `id` / `projectId` / `paymentId` / `status` / `title` / `message` / `createdAt`
 
 字段白名单说明：
 - client 侧只会返回必要字段（例如 `id/projectId/paymentId/status/title/message/createdAt`）。
@@ -435,74 +337,44 @@ curl.exe -sS "$Base/client/complaints" ^
 #### 6.1.1 upload-init：获取 presigned PUT URL
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-init" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "caseId":"<CASE_ID>",
-    "filename":"doc.pdf",
-    "contentType":"application/pdf",
-    "sizeBytes":123
-  }'
+curl.exe -sS -X POST "$Base/files/upload-init" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"caseId":"<CASE_ID>","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123}'
 ```
 
-返回示例：
-
-```json
-{"fileId":"<FILE_ID>","s3KeyRaw":"raw/...","presignedPutUrl":"https://...","expiresAt":"..."}
-```
-
-人工复制 `fileId / s3KeyRaw / presignedPutUrl`。
+- 期望：HTTP 200
+- 关键返回：`fileId` / `s3KeyRaw` / `presignedPutUrl` / `expiresAt`
 
 #### 6.1.2 presigned PUT：把 PDF 上传到对象存储
 
 > 说明：presigned URL 通常很长，建议整段复制。
-> 
+>
 > 若你在 PowerShell 里遇到 URL 转义/换行问题，可改用 Postman 按同样的 PUT 方式上传。
 
 ```powershell
-curl.exe -sS -X PUT "<PRESIGNED_PUT_URL>" ^
-  -H "Content-Type: application/pdf" ^
-  --data-binary "@.\doc.pdf"
+curl.exe -sS -X PUT "<PRESIGNED_PUT_URL>" -H "Content-Type: application/pdf" --data-binary "@.\doc.pdf"
 ```
+
+- 期望：HTTP 200 或 204（取决于 MinIO/S3 返回行为）
+- 关键返回：无（成功即表示 raw 已上传）
 
 #### 6.1.3 upload-complete：登记文件元数据
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-complete" ^
-  -H "Authorization: Bearer $InternalToken" ^
-  -H "Content-Type: $Json" ^
-  -d '{
-    "fileId":"<FILE_ID>",
-    "caseId":"<CASE_ID>",
-    "filename":"doc.pdf",
-    "contentType":"application/pdf",
-    "sizeBytes":123,
-    "sha256":null,
-    "s3KeyRaw":"<S3_KEY_RAW>"
-  }'
+curl.exe -sS -X POST "$Base/files/upload-complete" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"fileId":"<FILE_ID>","caseId":"<CASE_ID>","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123,"sha256":null,"s3KeyRaw":"<S3_KEY_RAW>"}'
 ```
 
-返回示例：
-
-```json
-{"fileId":"<FILE_ID>"}
-```
+- 期望：HTTP 200
+- 关键返回：`fileId`
 
 ### 6.2 创建预览 token（external）
 
 接口：`POST /preview/files/{fileId}/tokens`
 
 ```powershell
-curl.exe -sS -X POST "$Base/preview/files/<FILE_ID>/tokens" ^
-  -H "Authorization: Bearer $ExternalToken"
+curl.exe -sS -X POST "$Base/preview/files/<FILE_ID>/tokens" -H "Authorization: Bearer $ExternalToken"
 ```
 
-返回示例：
-
-```json
-{"token":"<PREVIEW_TOKEN>","expiresAt":"2026-01-11T12:00:00Z"}
-```
+- 期望：HTTP 200
+- 关键返回：`token` / `expiresAt`
 
 > 说明：本系统不通过 query 参数指定 `variant`。
 > 预览的 variant 由 viewer 的 `user_type` 自动决定：external 用户生成 external variant。
@@ -512,15 +384,16 @@ curl.exe -sS -X POST "$Base/preview/files/<FILE_ID>/tokens" ^
 接口：`GET /preview?token=...`（返回 `application/pdf`）
 
 ```powershell
-curl.exe -sS -L "$Base/preview?token=<PREVIEW_TOKEN>" ^
-  -H "Authorization: Bearer $ExternalToken" ^
-  -o preview-external.pdf
+curl.exe -sS -L -X GET "$Base/preview?token=<PREVIEW_TOKEN>" -H "Authorization: Bearer $ExternalToken" -o preview-external.pdf
 ```
+
+- 期望：HTTP 200
+- 关键返回：响应为 PDF bytes（保存到 `preview-external.pdf`）
 
 检查点：
 - external 预览应为 image-based PDF（不可复制文本）。
 - 页面应包含 EXTERNAL 强水印。
-- external 禁止访问内部文件接口（如 `/files/**`、`/instructions/**` 等），会返回 403。
+- external 禁止访问内部接口（如 `/files/**`、`/instructions/**` 等），会返回 403。
 
 ---
 
@@ -529,14 +402,12 @@ curl.exe -sS -L "$Base/preview?token=<PREVIEW_TOKEN>" ^
 接口：`GET /reports/zone-dashboard`
 
 ```powershell
-curl.exe -sS "$Base/reports/zone-dashboard" ^
-  -H "Authorization: Bearer $InternalToken"
+curl.exe -sS -X GET "$Base/reports/zone-dashboard" -H "Authorization: Bearer $InternalToken"
 ```
 
-说明：
-- 返回为按 group 聚合的列表。
-- 每行包含 grouped objects：`instruction / overdue / task / payment`。
-- `dayKey` 使用 Asia/Shanghai 时区，格式为 `yyyyMMdd`（例如 `20260111`）。
+- 期望：HTTP 200
+- 关键返回：数组；每行包含 `groupId`，以及 grouped objects：`instruction` / `overdue` / `task` / `payment`
+- `dayKey` 使用 Asia/Shanghai 时区，格式为 `yyyyMMdd`（例如 `20260111`）
 
 ---
 
@@ -557,8 +428,48 @@ curl.exe -sS "$Base/reports/zone-dashboard" ^
 
 ```powershell
 docker compose ps
+```
 
+```powershell
 docker compose logs -f api
+```
 
+```powershell
 docker compose logs -f worker
 ```
+
+---
+
+## 真实接口清单表（从源码 Controller 扫描）
+
+> 来源：`src/api/src/main/java/**/**Controller.java` 中的 `@RequestMapping/@GetMapping/@PostMapping`。
+> 
+> 说明：AUTH 为接口设计意图的最小分类：
+> - `anonymous`：无需 JWT
+> - `internal`：仅 internal/admin JWT（非 `/client/**` 且非 `/preview/**`）
+> - `client`：仅 client JWT（`/client/**`）
+> - `internal/client/external`：任意已认证用户可访问（`/preview/**`）
+
+| METHOD | PATH | AUTH | 备注 |
+|---|---|---|---|
+| GET | /health | anonymous | 健康检查（返回纯文本 ok） |
+| POST | /auth/sms/send | anonymous | 发送短信验证码（demo：验证码打印在 api logs） |
+| POST | /auth/sms/verify | anonymous | 校验验证码并返回 JWT（`token`） |
+| POST | /instructions | internal | 创建指令草稿（HTTP 201，`instructionId`） |
+| POST | /instructions/{instructionId}/issue | internal | 下发指令；`Idempotency-Key` 必填；返回 `taskIds` |
+| POST | /instruction-items/{instructionItemId}/status | internal | 更新指令项状态 |
+| GET | /me/projects | internal | 我的项目列表 |
+| GET | /me/tasks | internal | 我的任务列表（project-only task 的 `caseId` 可能为 null） |
+| POST | /evidences | internal | 创建证据（HTTP 201，`evidenceId`） |
+| POST | /tasks/{taskId}/payments | internal | 按任务创建回款；task.caseId 为空会 422（`TASK_HAS_NO_CASE`） |
+| POST | /payments | internal | 创建回款；可选 `Idempotency-Key`；返回 `paymentId` |
+| POST | /payments/{paymentId}/correct | internal | 更正回款；query: `reason`；可选 `Idempotency-Key`；返回 `newPaymentId` |
+| POST | /files/upload-init | internal | 初始化上传（返回 `fileId/s3KeyRaw/presignedPutUrl/expiresAt`） |
+| POST | /files/upload-complete | internal | 上传完成登记（返回 `fileId`） |
+| POST | /preview/files/{fileId}/tokens | internal/client/external | 创建一次性预览 token（返回 `token/expiresAt`） |
+| GET | /preview?token=... | internal/client/external | 获取预览 PDF bytes（external 预览为 image-based + EXTERNAL 水印） |
+| GET | /client/projects | client | 客户项目列表 |
+| GET | /client/projects/{projectId}/payments | client | 客户回款明细；可选 query: `caseId`；仅返回有效且 is_client_visible=true |
+| POST | /client/payments/{paymentId}/disputes | client | 发起对账争议；可选 `Idempotency-Key`；返回 `disputeId/status`（HTTP 201） |
+| GET | /client/complaints | client | 查询投诉/对账记录（字段白名单） |
+| GET | /reports/zone-dashboard | internal | 区域看板报表；dayKey=Asia/Shanghai yyyyMMdd |
