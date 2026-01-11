@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/secp
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+secp:
+  jwt:
+    issuer: secp-api
+    secret: dev-secret-change-me
+    ttl-seconds: 86400
+  auth:
+    group-cache-ttl-seconds: 45
+  idempotency:
+    ttl-seconds: 86400
+    in-progress-ttl-seconds: 120
+  sms:
+    code-ttl-seconds: 300
+    send-cooldown-seconds: 60
+    daily-max-per-phone: 10
+
+  s3:
+    # In tests these are overridden by Testcontainers (MinIO)
+    endpoint: ""
+    region: us-east-1
+    bucket: secp-dev
+    access-key: ""
+    secret-key: ""
+    path-style: true
+
+  preview:
+    max-size-bytes: 52428800 # 50MB
+    max-pages: 80
+    cache-ttl-seconds: 86400
+    watermark:
+      wm-ver: 1
+      time-format: "yyyy-MM-dd HH:mm:ss"
+      density-multiplier: 1.0
+      external:
+        angle: -35
+        opacity: 0.18
+        font-size: 22
+        template: "{tag} | {username} | {phone_last4} | {timestamp}"
+      client:
+        angle: -35
+        opacity: 0.12
+        font-size: 18
+        template: "CLIENT | {username} | {timestamp}"
+      internal:
+        angle: -35
+        opacity: 0.08
+        font-size: 16
+        template: "INTERNAL | {username} | {timestamp}"
+
+logging:
+  level:
+    root: INFO

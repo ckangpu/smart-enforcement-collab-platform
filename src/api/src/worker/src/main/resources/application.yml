@@ -1,0 +1,22 @@
+spring:
+  main:
+    web-application-type: none
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:postgresql://localhost:5432/secp
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 5
+
+worker:
+  poll-ms: 1000
+  batch-size: 10
+  max-retry: 8
+  overdue-scan-ms: 60000
+  overdue-batch-size: 100
+
+logging:
+  level:
+    root: INFO

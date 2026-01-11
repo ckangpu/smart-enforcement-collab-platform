@@ -1,0 +1,42 @@
+# Maven / Java build outputs
+**/target/
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+
+# ===== build outputs =====
+**/target/
+**/.classpath
+**/.project
+**/.settings/
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===== logs/temp =====
+*.log
+*.tmp
+*.swp
+*~
+
+# ===== local secrets / overrides =====
+.env
+application-local.yml
+docker-compose.override.yml
+
+# ===== testcontainers =====
+**/testcontainers.properties

@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: secp-postgres
+    environment:
+      POSTGRES_DB: secp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - secp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d secp"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    container_name: secp-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  secp_pgdata:
