@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secp}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${SECP_DB_HOST:localhost}:${SECP_DB_PORT:5432}/${SECP_DB_DB:secp}}
+    username: ${SPRING_DATASOURCE_USERNAME:${SECP_DB_USER:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${SECP_DB_PASS:postgres}}
     hikari:
       maximum-pool-size: 10
   flyway:
@@ -15,10 +15,12 @@ spring:
     password: ${SPRING_FLYWAY_PASSWORD:}
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: ${SPRING_DATA_REDIS_PORT:6379}
+      host: ${SPRING_DATA_REDIS_HOST:${SECP_REDIS_HOST:localhost}}
+      port: ${SPRING_DATA_REDIS_PORT:${SECP_REDIS_PORT:6379}}
 
 secp:
+  storage:
+    mode: ${SECP_STORAGE_MODE:minio}
   jwt:
     issuer: secp-api
     secret: ${SECP_JWT_SECRET:dev-secret-change-me}

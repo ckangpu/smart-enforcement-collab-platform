@@ -1,83 +1,224 @@
-# 本地一键启动（V1）
+# 本地交付手册：Windows 一键启动（可复制执行）
 
-目标：在仓库根目录通过 Docker Compose 一键启动 Postgres/Redis/MinIO，并容器化运行 API + Worker。
+目标：在 Windows 本机通过 Docker Compose 一键启动：Postgres / Redis / MinIO / API / Worker。
 
-> 约束：仓库只提供 `.env.example`，不要提交 `.env`（可能包含敏感信息）。
+重要约束：仓库只提供示例环境文件，不要提交 `.env`（可能包含敏感信息）。
 
-## 0) 前置条件
+## 0. 前置条件（Windows + Docker Desktop + WSL2 + Maven + JDK21）
 
-- 已安装 Docker Desktop（Windows）并启用 `docker compose`。
-- 端口未被占用：`5432`/`6379`/`9000`/`9001`/`8080`。
+必备：
+- Windows 10/11
+- Docker Desktop（启用 WSL2 后端）
+- WSL2 已安装并可用
+- JDK 21
+- Maven 3.9+
 
-## 1) 创建本地环境变量文件
+建议你先在 PowerShell 验证：
 
-在仓库根目录执行：
+```powershell
+docker version
+docker compose version
+wsl -l -v
+java -version
+mvn -v
+```
+
+端口要求（默认映射）：
+- `api`：`8080`
+- `minio`：`9000`（S3 endpoint）、`9001`（Console）
+- `postgres`：`5432`
+- `redis`：`6379`
+
+## 1. 从零开始（git clone → 进入目录）
+
+```powershell
+git clone <REPO_URL>
+cd smart-enforcement-collab-platform
+```
+
+## 2. 配置（复制 .env.example → .env；解释变量含义；哪些必须改）
+
+1) 复制示例文件：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-如需自定义数据库密码、MinIO 账号、bucket 名称等，请编辑 `.env`。
+2) 编辑 `.env`：
 
-## 2) 一键启动
+```powershell
+notepad .env
+```
+
+### 2.1 变量说明（按默认 compose/应用读取）
+
+说明：以下变量均可放在 `.env` 里；不要把真实密钥提交到 Git。
+
+**Postgres（容器）**
+- `POSTGRES_DB`：数据库名（本地默认 `secp`）
+- `POSTGRES_USER`：DB 超级用户（用于 Flyway 初始化/迁移）
+- `POSTGRES_PASSWORD`：DB 超级用户密码
+
+**应用 DB 用户（由迁移创建/用于 API&Worker 业务连接）**
+- `DB_APP_USER`：应用连接账号
+- `DB_APP_PASSWORD`：应用连接密码
+
+**Redis（容器）**
+- 无强制变量；默认端口 `6379`
+
+**MinIO（本地 S3）**
+- `MINIO_ROOT_USER`：MinIO 控制台登录用户名
+- `MINIO_ROOT_PASSWORD`：MinIO 控制台登录密码
+- `MINIO_BUCKET`：启动时由 `minio-init` 自动创建的 bucket（本地推荐 `secp-dev`）
+
+**应用存储（S3 客户端）**
+- `SECP_S3_ENDPOINT`：S3 endpoint（本地 compose 内固定为 `http://minio:9000`）
+- `SECP_S3_BUCKET`：应用读写的 bucket（建议与 `MINIO_BUCKET` 一致）
+- `SECP_S3_REGION`：region（本地可用 `us-east-1`）
+- `SECP_S3_ACCESS_KEY`：access key（本地可填 MinIO root user）
+- `SECP_S3_SECRET_KEY`：secret key（本地可填 MinIO root password）
+
+**鉴权（开发用）**
+- `SECP_JWT_SECRET`：JWT 签名密钥（仅开发环境；生产必须更换）
+
+### 2.2 哪些必须改？
+
+本地开发（仅跑起来）：
+- 允许保持示例值，但至少建议修改 `SECP_JWT_SECRET`。
+
+生产/类生产：
+- 必须设置强密码并更换所有密钥类变量（不要使用示例值）。
+
+提示：本仓库还提供了 dev/prod 分离骨架文件（不提交 `.env`）：
+- `.env.dev.example`
+- `.env.prod.example`
+
+## 3. 一键启动（docker compose up -d；docker compose ps）
 
 在仓库根目录执行：
 
 ```powershell
 docker compose up -d
+docker compose ps
 ```
 
 预期：
-- `postgres`、`redis`、`minio` 启动并通过 healthcheck。
-- `minio-init` 自动创建 bucket（优先使用 `.env` 中 `MINIO_BUCKET`；兼容旧变量 `SECP_S3_BUCKET`）。
-- `api` 启动后提供健康检查：`GET http://localhost:8080/health` 返回 `ok`。
-- `worker` 启动并开始轮询 outbox（日志无循环报错）。
+- `postgres`、`redis`、`minio` 为 `healthy`
+- `minio-init` 运行完退出（`Exited (0)`）
+- `minio-init` 会自动创建 bucket（优先使用 `.env` 的 `MINIO_BUCKET`；兼容旧变量 `SECP_S3_BUCKET`）
+- `api`、`worker` 为 `Up`
 
-## 3) 查看日志
+## 4. 健康检查（用 curl.exe；/health）
+
+注意：Windows PowerShell 里的 `curl` 是别名（`Invoke-WebRequest`），请使用 `curl.exe`。
 
 ```powershell
-# API 日志
-docker compose logs -f api
-
-# Worker 日志
-docker compose logs -f worker
-
-# MinIO 日志
-docker compose logs -f minio
+curl.exe -sS -D - http://localhost:8080/health
 ```
 
-## 4) 健康检查与访问地址
+预期输出：HTTP 200 且 body 为 `ok`。
 
-- API Health：
-  - `http://localhost:8080/health`
-- MinIO 控制台：
-  - `http://localhost:9001`
-- MinIO S3 Endpoint（API/Worker 容器内使用）：
-  - `http://minio:9000`
-
-## 5) 重启 / 停止 / 清理
+## 5. 查看日志（docker compose logs -f api / worker / minio / postgres）
 
 ```powershell
-# 重启某个服务
-docker compose restart api
+docker compose logs -f api
+docker compose logs -f worker
+docker compose logs -f minio
+docker compose logs -f postgres
+```
 
-docker compose restart worker
+## 6. 常见问题排查（必须包含）
 
+### a) minio-init 镜像拉取失败怎么办
+
+```powershell
+docker compose pull minio-init
+docker pull minio/mc:latest
+docker compose up -d minio minio-init
+docker compose logs --tail=200 minio-init
+```
+
+若仍失败：检查网络代理/公司镜像加速器配置（Docker Desktop Settings）。
+
+### b) /health 连接不上怎么办（端口占用、容器退出、flyway 报错）
+
+1) 先看容器状态：
+
+```powershell
+docker compose ps -a
+```
+
+2) 若 `api` 不是 `Up`：
+
+```powershell
+docker compose logs --tail=200 api
+```
+
+常见原因：
+- 端口 `8080` 被占用：修改占用进程或改 compose 端口映射
+- `api` 容器退出：查看日志定位异常
+- Flyway 迁移报错：查看日志中 `Flyway`/`Migration` 相关错误
+
+### c) Testcontainers 找不到 Docker 怎么办（VS Code vs 终端差异）
+
+现象：`mvn test` 中 Testcontainers 提示找不到 Docker。
+
+排查顺序：
+1) 确认 Docker Desktop 已启动，并且 `docker info` 在当前终端可用。
+2) 如果你是从 VS Code 的测试面板/Java Test Runner 触发：重启 VS Code（让它继承最新环境/上下文）。
+3) 确认 Docker Context 是 `desktop-linux`：
+
+```powershell
+docker context show
+```
+
+### d) Windows PowerShell curl 别名问题（必须写 curl.exe）
+
+PowerShell 里：
+- `curl` 是 `Invoke-WebRequest` 的别名
+- 需要用：`curl.exe`
+
+示例：
+
+```powershell
+curl.exe http://localhost:8080/health
+```
+
+### e) 迁移报错怎么处理（开发环境：docker compose down -v 重建）
+
+开发环境推荐直接重置（会清空 DB/MinIO 数据）：
+
+```powershell
+docker compose down -v
+docker compose up -d
+```
+
+## 7. 清理与重置（docker compose down -v；如何删除 volume）
+
+```powershell
 # 停止并删除容器（保留数据卷）
 docker compose down
 
 # 停止并删除容器 + 数据卷（会清空 Postgres/MinIO 数据）
 docker compose down -v
+
+# 查看并手动删除卷（谨慎）
+docker volume ls
 ```
 
-## 6) 常见问题
+## 8. 验收 checklist（可复制版）
 
-- API 启动失败（连不上 DB/Redis/MinIO）：
-  - 先检查 `docker compose ps` 中各服务是否 healthy
-  - 查看日志：`docker compose logs -f api`
+```powershell
+# 1) 启动
+docker compose up -d
+docker compose ps
 
-- MinIO bucket 未创建：
-  - 查看 `minio-init` 日志：`docker compose logs -f minio-init`
+# 2) API 健康检查（必须用 curl.exe）
+curl.exe http://localhost:8080/health
 
-- 本地端口冲突：
-  - 关闭占用端口的进程，或修改 `docker-compose.yml` 的端口映射。
+# 3) 测试
+mvn -f src/api/pom.xml test
+mvn -f src/api/src/worker/pom.xml test
+```
+
+最后提醒：运行健康检查请使用 PowerShell 的 `curl.exe`。

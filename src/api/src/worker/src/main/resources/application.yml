@@ -2,9 +2,9 @@ spring:
   main:
     web-application-type: none
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secp}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${SECP_DB_HOST:localhost}:${SECP_DB_PORT:5432}/${SECP_DB_DB:secp}}
+    username: ${SPRING_DATASOURCE_USERNAME:${SECP_DB_USER:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${SECP_DB_PASS:postgres}}
     hikari:
       maximum-pool-size: 5
   flyway:
@@ -14,11 +14,11 @@ spring:
     password: ${SPRING_FLYWAY_PASSWORD:}
 
 worker:
-  poll-ms: 1000
-  batch-size: 10
-  max-retry: 8
-  overdue-scan-ms: 60000
-  overdue-batch-size: 100
+  poll-ms: ${WORKER_POLL_MS:1000}
+  batch-size: ${WORKER_BATCH_SIZE:10}
+  max-retry: ${WORKER_MAX_RETRY:8}
+  overdue-scan-ms: ${WORKER_OVERDUE_SCAN_MS:60000}
+  overdue-batch-size: ${WORKER_OVERDUE_BATCH_SIZE:100}
 
 logging:
   level:
