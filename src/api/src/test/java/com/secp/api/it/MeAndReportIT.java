@@ -146,6 +146,11 @@ class MeAndReportIT extends IntegrationTestBase {
       jdbc.update("insert into project(id, group_id, name, status, created_by) values (?,?,?,?,?)",
         projectA2, groupA, "PA2", "ACTIVE", internalAdmin);
 
+      // projectA3: denominators are <= 0 (should also count as missing)
+      UUID projectA3 = UUID.randomUUID();
+      jdbc.update("insert into project(id, group_id, name, status, created_by, execution_target_amount, mandate_amount) values (?,?,?,?,?,?,?)",
+        projectA3, groupA, "PA3", "ACTIVE", internalAdmin, new BigDecimal("0"), new BigDecimal("0"));
+
       // Instruction items: set one DONE and one overdue OPEN
       UUID itemDone = jdbc.queryForObject(
         "select id from instruction_item where instruction_id = ? order by created_at asc limit 1",
@@ -244,10 +249,17 @@ class MeAndReportIT extends IntegrationTestBase {
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> statusCounts = (List<Map<String, Object>>) task.get("statusCounts");
     assertNotNull(statusCounts);
-    assertTrue(statusCounts.stream().anyMatch(s -> "TODO".equals(String.valueOf(s.get("status"))) && ((Number) s.get("count")).intValue() == 1));
-    assertTrue(statusCounts.stream().anyMatch(s -> "DOING".equals(String.valueOf(s.get("status"))) && ((Number) s.get("count")).intValue() == 1));
-    assertTrue(statusCounts.stream().anyMatch(s -> "BLOCKED".equals(String.valueOf(s.get("status"))) && ((Number) s.get("count")).intValue() == 1));
-    assertTrue(statusCounts.stream().anyMatch(s -> "DONE".equals(String.valueOf(s.get("status"))) && ((Number) s.get("count")).intValue() == 1));
+    assertEquals(4, statusCounts.size());
+    Map<String, Integer> sc = statusCounts.stream().collect(
+      java.util.stream.Collectors.toMap(
+        s -> String.valueOf(s.get("status")),
+        s -> ((Number) s.get("count")).intValue()
+      )
+    );
+    assertEquals(1, sc.get("TODO"));
+    assertEquals(1, sc.get("DOING"));
+    assertEquals(1, sc.get("BLOCKED"));
+    assertEquals(1, sc.get("DONE"));
 
     // grouped: payment
     @SuppressWarnings("unchecked")
@@ -256,7 +268,7 @@ class MeAndReportIT extends IntegrationTestBase {
     assertEquals(0, new BigDecimal("12.34").compareTo(new BigDecimal(String.valueOf(payment.get("sum30d")))));
     assertEquals(new BigDecimal("0.1234"), new BigDecimal(String.valueOf(payment.get("ratioTarget"))).setScale(4, RoundingMode.HALF_UP));
     assertEquals(new BigDecimal("0.2468"), new BigDecimal(String.valueOf(payment.get("ratioMandate"))).setScale(4, RoundingMode.HALF_UP));
-    assertEquals(1, ((Number) payment.get("missingDenominatorProjectCount")).intValue());
+    assertEquals(2, ((Number) payment.get("missingDenominatorProjectCount")).intValue());
   }
 
   private void seed(UUID internalAdmin,

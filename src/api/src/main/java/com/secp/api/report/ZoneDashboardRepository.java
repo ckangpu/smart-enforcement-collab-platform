@@ -137,13 +137,27 @@ public class ZoneDashboardRepository {
   }
 
   private ZoneDashboardTaskDto queryTask(UUID groupId) {
+    // Always return stable list with 4 statuses (TODO/DOING/BLOCKED/DONE), filling missing with 0.
     List<ZoneDashboardStatusCountDto> statusCounts = jdbc.query(
         """
-        select t.status as status, count(1) as cnt
-          from task t
-         where t.group_id = ?
-         group by t.status
-         order by t.status asc
+        with statuses(status) as (
+          values ('TODO'), ('DOING'), ('BLOCKED'), ('DONE')
+        ), counts as (
+          select t.status as status, count(1) as cnt
+            from task t
+           where t.group_id = ?
+           group by t.status
+        )
+        select s.status as status, coalesce(c.cnt, 0) as cnt
+          from statuses s
+          left join counts c on c.status = s.status
+         order by case s.status
+           when 'TODO' then 1
+           when 'DOING' then 2
+           when 'BLOCKED' then 3
+           when 'DONE' then 4
+           else 99
+         end
         """,
         (rs, rowNum) -> new ZoneDashboardStatusCountDto(rs.getString("status"), rs.getLong("cnt")),
         groupId
@@ -185,7 +199,12 @@ public class ZoneDashboardRepository {
         select
           coalesce(sum(p.execution_target_amount), 0) as target_sum,
           coalesce(sum(p.mandate_amount), 0) as mandate_sum,
-          count(1) filter (where p.execution_target_amount is null or p.mandate_amount is null) as missing_count
+          count(1) filter (
+            where p.execution_target_amount is null
+               or p.execution_target_amount <= 0
+               or p.mandate_amount is null
+               or p.mandate_amount <= 0
+          ) as missing_count
         from project p
         where p.group_id = ?
         """,
