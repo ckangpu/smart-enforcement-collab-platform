@@ -11,7 +11,19 @@
 ## 1) 前置条件
 
 1. 已按 docs/DEPLOY_LOCAL.md 启动 docker compose。
-2. 确认健康检查可用：
+2. 导入本地可复现 dev seed（只用于本地开发/演示；不要用于生产）：
+
+```powershell
+./scripts/seed-dev.ps1
+```
+
+- 期望：命令成功结束，输出 `Done. Dev seed imported.`
+
+- dev seed 内置的固定 ID（后续示例直接使用）：
+   - `PROJECT_ID`：`33333333-3333-3333-3333-333333333333`
+   - `CASE_ID`：`44444444-4444-4444-4444-444444444444`
+
+3. 确认健康检查可用：
 
 ```powershell
 curl.exe -sS http://localhost:8080/health
@@ -20,7 +32,7 @@ curl.exe -sS http://localhost:8080/health
 - 期望：HTTP 200
 - 关键返回：纯文本 `ok`
 
-3. 需要准备 3 类用户：
+4. 需要准备 3 类用户：
    - internal 用户（内部，`user_type=internal`）用于调用内部接口（非 `/client/**`、非 `/preview/**`）。
    - client 用户（客户，`user_type=client`）用于调用 `/client/**`。
    - external 用户（外协，`user_type=external`）用于调用 `/preview/**` 的 external 预览。
@@ -32,7 +44,7 @@ curl.exe -sS http://localhost:8080/health
 >   - `src/api/src/test/java/com/secp/api/it/ClientApiIsolationIT.java`
 >   - `src/api/src/test/java/com/secp/api/it/FilePreviewWatermarkIT.java`
 
-4. 安全提醒：
+5. 安全提醒：
    - 本手册不写任何敏感密钥/口令/真实 token。
    - `.env` 不可提交到仓库（仅用 `.env.*.example` 作为骨架）。
 
@@ -120,6 +132,8 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phon
 
 > external（外协）用户同理：用外协手机号走相同登录流程，拿到 `$ExternalToken`。
 
+- dev seed 里 external 手机号固定为：`13900000003`
+
 ---
 
 ## 4) internal 端：最小闭环（指令 -> 任务 -> 证据 -> 回款/更正 -> 结案可选）
@@ -137,7 +151,7 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phon
 > 你需要一个已存在的 `projectId`（来自测试 seed/数据库数据）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"project","refId":"<PROJECT_ID>","title":"Instr (project)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"project","refId":"33333333-3333-3333-3333-333333333333","title":"Instr (project)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
 ```
 
 - 期望：HTTP 201
@@ -150,7 +164,7 @@ curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalTok
 > 你需要一个已存在的 `caseId`（且该 case 必须存在于数据库中）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"case","refId":"<CASE_ID>","title":"Instr (case)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"case","refId":"44444444-4444-4444-4444-444444444444","title":"Instr (case)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
 ```
 
 - 期望：HTTP 201
@@ -201,7 +215,7 @@ curl.exe -sS -X GET "$Base/me/tasks" -H "Authorization: Bearer $InternalToken"
 project-only evidence 示例（`caseId=null`，`projectId` 必填）：
 
 ```powershell
-curl.exe -sS -X POST "$Base/evidences" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"projectId":"<PROJECT_ID>","caseId":null,"title":"Evidence (project-only)","fileId":null}'
+curl.exe -sS -X POST "$Base/evidences" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"projectId":"33333333-3333-3333-3333-333333333333","caseId":null,"title":"Evidence (project-only)","fileId":null}'
 ```
 
 - 期望：HTTP 201
@@ -241,7 +255,7 @@ curl.exe -sS -X POST "$Base/tasks/<CASE_TASK_ID>/payments" -H "Authorization: Be
 B) 直接按 projectId+caseId 创建：`POST /payments`（可选 `Idempotency-Key`）
 
 ```powershell
-$IdemPay = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $IdemPay" -d '{"projectId":"<PROJECT_ID>","caseId":"<CASE_ID>","amount":100.00,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payerA","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
+$IdemPay = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $IdemPay" -d '{"projectId":"33333333-3333-3333-3333-333333333333","caseId":"44444444-4444-4444-4444-444444444444","amount":100.00,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payerA","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
 ```
 
 - 期望：HTTP 200
@@ -280,7 +294,7 @@ curl.exe -sS -X GET "$Base/client/projects" -H "Authorization: Bearer $ClientTok
 - 可选 query 参数：`caseId`（如果你希望只看某个 case 的回款）。
 
 ```powershell
-curl.exe -sS -X GET "$Base/client/projects/<PROJECT_ID>/payments" -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/33333333-3333-3333-3333-333333333333/payments" -H "Authorization: Bearer $ClientToken"
 ```
 
 - 期望：HTTP 200
@@ -289,7 +303,7 @@ curl.exe -sS -X GET "$Base/client/projects/<PROJECT_ID>/payments" -H "Authorizat
 如需带 caseId：
 
 ```powershell
-curl.exe -sS -X GET "$Base/client/projects/<PROJECT_ID>/payments?caseId=<CASE_ID>" -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/33333333-3333-3333-3333-333333333333/payments?caseId=44444444-4444-4444-4444-444444444444" -H "Authorization: Bearer $ClientToken"
 ```
 
 - 期望：HTTP 200
@@ -337,7 +351,7 @@ curl.exe -sS -X GET "$Base/client/complaints" -H "Authorization: Bearer $ClientT
 #### 6.1.1 upload-init：获取 presigned PUT URL
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-init" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"caseId":"<CASE_ID>","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123}'
+curl.exe -sS -X POST "$Base/files/upload-init" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"caseId":"44444444-4444-4444-4444-444444444444","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123}'
 ```
 
 - 期望：HTTP 200
@@ -359,7 +373,7 @@ curl.exe -sS -X PUT "<PRESIGNED_PUT_URL>" -H "Content-Type: application/pdf" --d
 #### 6.1.3 upload-complete：登记文件元数据
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-complete" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"fileId":"<FILE_ID>","caseId":"<CASE_ID>","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123,"sha256":null,"s3KeyRaw":"<S3_KEY_RAW>"}'
+curl.exe -sS -X POST "$Base/files/upload-complete" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"fileId":"<FILE_ID>","caseId":"44444444-4444-4444-4444-444444444444","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123,"sha256":null,"s3KeyRaw":"<S3_KEY_RAW>"}'
 ```
 
 - 期望：HTTP 200
