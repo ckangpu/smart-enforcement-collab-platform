@@ -103,6 +103,7 @@ public class OutboxPoller {
   private boolean isNotificationEvent(String eventType) {
     return "Instruction.Issued".equals(eventType)
         || "Task.Assigned".equals(eventType)
+        || "InstructionItem.StatusChanged".equals(eventType)
       || "InstructionItem.Overdue".equals(eventType)
       || "InstructionItem.OverdueDaily".equals(eventType)
       || "InstructionItem.OverdueEscalate".equals(eventType);
@@ -119,6 +120,8 @@ public class OutboxPoller {
         onInstructionIssued(eventId);
       } else if ("Task.Assigned".equals(eventType)) {
         onTaskAssigned(eventId);
+      } else if ("InstructionItem.StatusChanged".equals(eventType)) {
+        onInstructionItemStatusChanged(eventId);
       } else if ("InstructionItem.Overdue".equals(eventType)) {
         onInstructionItemOverdue(eventId);
       } else if ("InstructionItem.OverdueDaily".equals(eventType)) {
@@ -225,6 +228,79 @@ public class OutboxPoller {
     String link = "/tasks/" + taskId;
 
     upsertMergedNotification(groupId, assigneeUserId, "Task.Assigned", title, body, link);
+  }
+
+  private void onInstructionItemStatusChanged(UUID eventId) {
+    UUID itemId = jdbc.queryForObject(
+        "select (payload->>'instructionItemId')::uuid from event_outbox where event_id=?",
+        UUID.class,
+        eventId
+    );
+    UUID instructionId = jdbc.queryForObject(
+        "select (payload->>'instructionId')::uuid from event_outbox where event_id=?",
+        UUID.class,
+        eventId
+    );
+    String fromStatus = jdbc.queryForObject(
+        "select payload->>'fromStatus' from event_outbox where event_id=?",
+        String.class,
+        eventId
+    );
+    String toStatus = jdbc.queryForObject(
+        "select payload->>'toStatus' from event_outbox where event_id=?",
+        String.class,
+        eventId
+    );
+    UUID changedByUserId = jdbc.queryForObject(
+        "select (payload->>'changedByUserId')::uuid from event_outbox where event_id=?",
+        UUID.class,
+        eventId
+    );
+
+    if (itemId == null) return;
+
+    List<Map<String, Object>> itemRows = jdbc.queryForList(
+        """
+        select ii.group_id,
+               coalesce(ii.assignee_user_id, ii.created_by) as assignee_user_id,
+               ii.instruction_id
+          from instruction_item ii
+         where ii.id=?
+        """,
+        itemId
+    );
+    if (itemRows.isEmpty()) return;
+    Map<String, Object> item = itemRows.getFirst();
+
+    UUID groupId = (UUID) item.get("group_id");
+    UUID assigneeUserId = (UUID) item.get("assignee_user_id");
+    UUID resolvedInstructionId = (UUID) item.get("instruction_id");
+    UUID useInstructionId = instructionId != null ? instructionId : resolvedInstructionId;
+
+    if (groupId == null || assigneeUserId == null) return;
+
+    String title = "指令项状态变更";
+    String body = "instructionId=" + useInstructionId
+        + ", itemId=" + itemId
+        + ", from=" + safeText(fromStatus)
+        + ", to=" + safeText(toStatus)
+        + (changedByUserId == null ? "" : ", by=" + changedByUserId);
+    String link = useInstructionId == null ? ("/instruction-items/" + itemId) : ("/instructions/" + useInstructionId + "/items/" + itemId);
+
+    if (isUserAllowedInGroup(assigneeUserId, groupId)) {
+      upsertMergedNotification(groupId, assigneeUserId, "InstructionItem.StatusChanged", title, body, link);
+    }
+
+    if (useInstructionId != null && "DONE".equalsIgnoreCase(String.valueOf(toStatus))) {
+      UUID issuedByUserId = jdbc.queryForObject(
+          "select issued_by from instruction where id=?",
+          UUID.class,
+          useInstructionId
+      );
+      if (issuedByUserId != null && !issuedByUserId.equals(assigneeUserId) && isUserAllowedInGroup(issuedByUserId, groupId)) {
+        upsertMergedNotification(groupId, issuedByUserId, "InstructionItem.StatusChanged", title, body, link);
+      }
+    }
   }
 
   private void onInstructionItemOverdue(UUID eventId) {

@@ -43,6 +43,24 @@ public class EvidenceRepository {
     return n != null && n > 0;
   }
 
+  public record FileRow(UUID id, UUID projectId, UUID caseId, String status) {
+  }
+
+  public Optional<FileRow> findFile(UUID fileId) {
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "select id, project_id, case_id, status from file_store where id = ?",
+        fileId
+    );
+    if (rows.isEmpty()) return Optional.empty();
+    Map<String, Object> r = rows.getFirst();
+    return Optional.of(new FileRow(
+        (UUID) r.get("id"),
+        (UUID) r.get("project_id"),
+        (UUID) r.get("case_id"),
+        String.valueOf(r.get("status"))
+    ));
+  }
+
   public void insertEvidence(UUID id,
                              UUID groupId,
                              UUID projectId,

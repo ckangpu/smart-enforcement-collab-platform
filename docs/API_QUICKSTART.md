@@ -19,9 +19,9 @@
 
 - 期望：命令成功结束，输出 `Done. Dev seed imported.`
 
-- dev seed 内置的固定 ID（后续示例直接使用）：
-   - `PROJECT_ID`：`33333333-3333-3333-3333-333333333333`
-   - `CASE_ID`：`44444444-4444-4444-4444-444444444444`
+- dev seed 说明（本手册只依赖它创建 **用户/组/客户绑定**）：
+   - `GROUP_ID`：`11111111-1111-1111-1111-111111111111`（后续用 /admin bootstrap 创建项目/案件）
+   - internal/client/external 三类手机号：见下文登录章节
 
 3. 确认健康检查可用：
 
@@ -136,11 +136,48 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phon
 
 ---
 
-## 4) internal 端：最小闭环（指令 -> 任务 -> 证据 -> 回款/更正 -> 结案可选）
+## 4) internal 端：最小闭环（先 bootstrap 项目/案件，再指令 -> 任务 -> 证据 -> 回款/更正 -> 结案可选）
 
 > 认证：internal API（除 `/auth/**`、`/client/**`、`/preview/**` 外）需要 `Authorization: Bearer <JWT>`。
 >
 > client/external 访问内部 API 会被拦截为 403（InternalApiGuardFilter）。
+
+### 4.0 先用 Admin Bootstrap 创建 projectId / caseId（不依赖 seed 固定项目）
+
+> internal-only，受 `InternalApiGuardFilter` 保护。
+>
+> 规则要点：
+> - 非 admin internal：只能在自己 `app.group_ids` 内创建（否则 404）
+> - 写操作同事务：业务表 + `audit_log` + `event_outbox`
+
+准备变量：
+
+```powershell
+$GroupId = "11111111-1111-1111-1111-111111111111"
+```
+
+1) 创建项目 `POST /admin/projects`：
+
+```powershell
+$Resp = curl.exe -sS -X POST "$Base/admin/projects" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"groupId\":\"$GroupId\",\"name\":\"Quickstart 项目\",\"bizTags\":[\"quickstart\"]}"
+$ProjectId = ($Resp | ConvertFrom-Json).projectId
+```
+
+2) 创建案件 `POST /admin/cases`（groupId 会继承 project.group_id）：
+
+```powershell
+$Resp = curl.exe -sS -X POST "$Base/admin/cases" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"projectId\":\"$ProjectId\",\"title\":\"Quickstart 案件\"}"
+$CaseId = ($Resp | ConvertFrom-Json).caseId
+```
+
+3) 可选：把自己加入成员（重复添加不报错）。dev seed 下 internal 用户 id 固定为：`aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2`
+
+```powershell
+$InternalUserId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"
+
+curl.exe -sS -X POST "$Base/admin/projects/$ProjectId/members" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"userId\":\"$InternalUserId\",\"role\":\"member\"}"
+curl.exe -sS -X POST "$Base/admin/cases/$CaseId/members"     -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"userId\":\"$InternalUserId\",\"role\":\"assignee\"}"
+```
 
 ### 4.1 创建指令（草稿） `POST /instructions`
 
@@ -151,7 +188,7 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phon
 > 你需要一个已存在的 `projectId`（来自测试 seed/数据库数据）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"project","refId":"33333333-3333-3333-3333-333333333333","title":"Instr (project)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"refType\":\"project\",\"refId\":\"$ProjectId\",\"title\":\"Instr (project)\",\"items\":[{\"title\":\"item-1\",\"dueAt\":\"2026-01-11T12:00:00+08:00\"}]}"
 ```
 
 - 期望：HTTP 201
@@ -164,7 +201,7 @@ curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalTok
 > 你需要一个已存在的 `caseId`（且该 case 必须存在于数据库中）。
 
 ```powershell
-curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"refType":"case","refId":"44444444-4444-4444-4444-444444444444","title":"Instr (case)","items":[{"title":"item-1","dueAt":"2026-01-11T12:00:00+08:00"}]}'
+curl.exe -sS -X POST "$Base/instructions" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"refType\":\"case\",\"refId\":\"$CaseId\",\"title\":\"Instr (case)\",\"items\":[{\"title\":\"item-1\",\"dueAt\":\"2026-01-11T12:00:00+08:00\"}]}"
 ```
 
 - 期望：HTTP 201
@@ -215,7 +252,7 @@ curl.exe -sS -X GET "$Base/me/tasks" -H "Authorization: Bearer $InternalToken"
 project-only evidence 示例（`caseId=null`，`projectId` 必填）：
 
 ```powershell
-curl.exe -sS -X POST "$Base/evidences" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"projectId":"33333333-3333-3333-3333-333333333333","caseId":null,"title":"Evidence (project-only)","fileId":null}'
+curl.exe -sS -X POST "$Base/evidences" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"projectId\":\"$ProjectId\",\"caseId\":null,\"title\":\"Evidence (project-only)\",\"fileId\":null}"
 ```
 
 - 期望：HTTP 201
@@ -255,7 +292,7 @@ curl.exe -sS -X POST "$Base/tasks/<CASE_TASK_ID>/payments" -H "Authorization: Be
 B) 直接按 projectId+caseId 创建：`POST /payments`（可选 `Idempotency-Key`）
 
 ```powershell
-$IdemPay = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $IdemPay" -d '{"projectId":"33333333-3333-3333-3333-333333333333","caseId":"44444444-4444-4444-4444-444444444444","amount":100.00,"paidAt":"2026-01-11T12:00:00+08:00","payChannel":"BANK","payerName":"payerA","bankLast4":"1234","clientNote":"client-note","internalNote":"internal-note","isClientVisible":true}'
+$IdemPay = [guid]::NewGuid().ToString(); curl.exe -sS -X POST "$Base/payments" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -H "Idempotency-Key: $IdemPay" -d "{\"projectId\":\"$ProjectId\",\"caseId\":\"$CaseId\",\"amount\":100.00,\"paidAt\":\"2026-01-11T12:00:00+08:00\",\"payChannel\":\"BANK\",\"payerName\":\"payerA\",\"bankLast4\":\"1234\",\"clientNote\":\"client-note\",\"internalNote\":\"internal-note\",\"isClientVisible\":true}"
 ```
 
 - 期望：HTTP 200
@@ -294,7 +331,7 @@ curl.exe -sS -X GET "$Base/client/projects" -H "Authorization: Bearer $ClientTok
 - 可选 query 参数：`caseId`（如果你希望只看某个 case 的回款）。
 
 ```powershell
-curl.exe -sS -X GET "$Base/client/projects/33333333-3333-3333-3333-333333333333/payments" -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/$ProjectId/payments" -H "Authorization: Bearer $ClientToken"
 ```
 
 - 期望：HTTP 200
@@ -303,7 +340,7 @@ curl.exe -sS -X GET "$Base/client/projects/33333333-3333-3333-3333-333333333333/
 如需带 caseId：
 
 ```powershell
-curl.exe -sS -X GET "$Base/client/projects/33333333-3333-3333-3333-333333333333/payments?caseId=44444444-4444-4444-4444-444444444444" -H "Authorization: Bearer $ClientToken"
+curl.exe -sS -X GET "$Base/client/projects/$ProjectId/payments?caseId=$CaseId" -H "Authorization: Bearer $ClientToken"
 ```
 
 - 期望：HTTP 200
@@ -351,7 +388,7 @@ curl.exe -sS -X GET "$Base/client/complaints" -H "Authorization: Bearer $ClientT
 #### 6.1.1 upload-init：获取 presigned PUT URL
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-init" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"caseId":"44444444-4444-4444-4444-444444444444","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123}'
+curl.exe -sS -X POST "$Base/files/upload-init" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"caseId\":\"$CaseId\",\"filename\":\"doc.pdf\",\"contentType\":\"application/pdf\",\"sizeBytes\":123}"
 ```
 
 - 期望：HTTP 200
@@ -373,7 +410,7 @@ curl.exe -sS -X PUT "<PRESIGNED_PUT_URL>" -H "Content-Type: application/pdf" --d
 #### 6.1.3 upload-complete：登记文件元数据
 
 ```powershell
-curl.exe -sS -X POST "$Base/files/upload-complete" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"fileId":"<FILE_ID>","caseId":"44444444-4444-4444-4444-444444444444","filename":"doc.pdf","contentType":"application/pdf","sizeBytes":123,"sha256":null,"s3KeyRaw":"<S3_KEY_RAW>"}'
+curl.exe -sS -X POST "$Base/files/upload-complete" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"fileId\":\"<FILE_ID>\",\"caseId\":\"$CaseId\",\"filename\":\"doc.pdf\",\"contentType\":\"application/pdf\",\"sizeBytes\":123,\"sha256\":null,\"s3KeyRaw\":\"<S3_KEY_RAW>\"}"
 ```
 
 - 期望：HTTP 200

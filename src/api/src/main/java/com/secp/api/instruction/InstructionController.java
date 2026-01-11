@@ -17,6 +17,7 @@ import java.util.UUID;
 public class InstructionController {
 
   private final InstructionService instructionService;
+  private final InstructionQueryService instructionQueryService;
 
   @PostMapping("/instructions")
   public ResponseEntity<CreateInstructionResponse> create(@Valid @RequestBody CreateInstructionRequest req,
@@ -42,6 +43,13 @@ public class InstructionController {
                                                                           HttpServletRequest httpReq) {
     AuthPrincipal principal = AuthContext.getRequired();
     UpdateInstructionItemStatusResponse resp = instructionService.updateItemStatus(principal, instructionItemId, req, httpReq);
+    return ResponseEntity.ok(resp);
+  }
+
+  @GetMapping("/instructions/{instructionId}")
+  public ResponseEntity<InstructionDetailResponse> getInstruction(@PathVariable UUID instructionId) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    InstructionDetailResponse resp = instructionQueryService.getInstructionDetail(principal, instructionId);
     return ResponseEntity.ok(resp);
   }
 }

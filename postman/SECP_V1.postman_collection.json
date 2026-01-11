@@ -1,0 +1,729 @@
+{
+  "info": {
+    "_postman_id": "c2b1d4e8-0f4b-4d6c-9c67-0b3a3c3c7a25",
+    "name": "SECP V1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}" }
+  ],
+  "item": [
+    {
+      "name": "A. Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "B. Auth (SMS demo)",
+      "item": [
+        {
+          "name": "POST /auth/sms/send (internal)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{internal_phone}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/send", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "send"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('ok=true', function () { pm.expect(pm.response.json().ok).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/sms/verify (internal) -> internal_token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{internal_phone}}\",\n  \"code\": \"{{sms_code_internal}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/verify", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "verify"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('token exists', function () { pm.expect(json.token).to.be.a('string'); });",
+                  "pm.environment.set('internal_token', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/sms/send (client)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{client_phone}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/send", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "send"] }
+          }
+        },
+        {
+          "name": "POST /auth/sms/verify (client) -> client_token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{client_phone}}\",\n  \"code\": \"{{sms_code_client}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/verify", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "verify"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('client_token', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/sms/send (external)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{external_phone}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/send", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "send"] }
+          }
+        },
+        {
+          "name": "POST /auth/sms/verify (external) -> external_token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{external_phone}}\",\n  \"code\": \"{{sms_code_external}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/sms/verify", "host": ["{{baseUrl}}"], "path": ["auth", "sms", "verify"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('external_token', json.token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "C. Admin Bootstrap",
+      "item": [
+        {
+          "name": "POST /admin/projects -> projectId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"{{groupId}}\",\n  \"name\": \"Postman Bootstrap Project\",\n  \"bizTags\": [\"postman\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/projects", "host": ["{{baseUrl}}"], "path": ["admin", "projects"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('projectId', json.projectId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/cases -> caseId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"title\": \"Postman Bootstrap Case\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/cases", "host": ["{{baseUrl}}"], "path": ["admin", "cases"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('caseId', json.caseId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/projects/:id/members (add self)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{internalUserId}}\",\n  \"role\": \"member\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/projects/{{projectId}}/members", "host": ["{{baseUrl}}"], "path": ["admin", "projects", "{{projectId}}", "members"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function b64urlDecode(input) {",
+                  "  input = input.replace(/-/g, '+').replace(/_/g, '/');",
+                  "  while (input.length % 4) input += '=';",
+                  "  return atob(input);",
+                  "}",
+                  "var token = pm.environment.get('internal_token');",
+                  "if (token) {",
+                  "  var parts = token.split('.');",
+                  "  if (parts.length >= 2) {",
+                  "    var payload = JSON.parse(b64urlDecode(parts[1]));",
+                  "    pm.environment.set('internalUserId', payload.sub);",
+                  "  }",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('ok=true', function () { pm.expect(pm.response.json().ok).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/cases/:id/members (add self)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{internalUserId}}\",\n  \"role\": \"assignee\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/admin/cases/{{caseId}}/members", "host": ["{{baseUrl}}"], "path": ["admin", "cases", "{{caseId}}", "members"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('ok=true', function () { pm.expect(pm.response.json().ok).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "D. Internal core",
+      "item": [
+        {
+          "name": "POST /instructions -> instructionId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refType\": \"case\",\n  \"refId\": \"{{caseId}}\",\n  \"title\": \"Postman 指令示例\",\n  \"items\": [\n    { \"title\": \"核对资料\" },\n    { \"title\": \"电话回访\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/instructions", "host": ["{{baseUrl}}"], "path": ["instructions"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('instructionId', json.instructionId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /instructions/:id/issue -> taskId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idem_issue}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructions/{{instructionId}}/issue",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructions", "{{instructionId}}", "issue"]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('idem_issue', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('taskIds non-empty', function () { pm.expect(json.taskIds && json.taskIds.length).to.be.above(0); });",
+                  "pm.environment.set('taskId', json.taskIds[0]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /me/tasks -> taskId (fallback)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{internal_token}}" }],
+            "url": { "raw": "{{baseUrl}}/me/tasks?caseId={{caseId}}", "host": ["{{baseUrl}}"], "path": ["me", "tasks"], "query": [{"key":"caseId","value":"{{caseId}}"}] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var rows = pm.response.json();",
+                  "if (Array.isArray(rows) && rows.length > 0) { pm.environment.set('taskId', rows[0].taskId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /tasks/:taskId/payments -> paymentId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 12.34,\n  \"paidAt\": \"2025-01-01T00:00:00+08:00\",\n  \"payChannel\": \"BANK\",\n  \"payerName\": \"张三\",\n  \"bankLast4\": \"1234\",\n  \"clientNote\": \"客户可见备注\",\n  \"internalNote\": \"内部备注\",\n  \"isClientVisible\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tasks/{{taskId}}/payments", "host": ["{{baseUrl}}"], "path": ["tasks", "{{taskId}}", "payments"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('paymentId', json.paymentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /payments -> paymentId (direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idem_payment}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"caseId\": \"{{caseId}}\",\n  \"amount\": 56.78,\n  \"paidAt\": \"2025-01-01T00:00:00+08:00\",\n  \"payChannel\": \"BANK\",\n  \"payerName\": \"李四\",\n  \"bankLast4\": \"5678\",\n  \"clientNote\": \"客户可见备注\",\n  \"internalNote\": \"内部备注\",\n  \"isClientVisible\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments", "host": ["{{baseUrl}}"], "path": ["payments"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('paymentId', json.paymentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /payments/:id/correct?reason=... -> correctedPaymentId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" },
+              { "key": "Idempotency-Key", "value": "idem-correct-1" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}/correct?reason=postman_test",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "{{paymentId}}", "correct"],
+              "query": [{"key":"reason","value":"postman_test"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('correctedPaymentId', json.newPaymentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /evidences -> evidenceId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"caseId\": \"{{caseId}}\",\n  \"title\": \"证据（无文件）\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/evidences", "host": ["{{baseUrl}}"], "path": ["evidences"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/zone-dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{internal_token}}" }],
+            "url": { "raw": "{{baseUrl}}/reports/zone-dashboard", "host": ["{{baseUrl}}"], "path": ["reports", "zone-dashboard"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "E. Client read + dispute",
+      "item": [
+        {
+          "name": "GET /client/projects",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{client_token}}" }],
+            "url": { "raw": "{{baseUrl}}/client/projects", "host": ["{{baseUrl}}"], "path": ["client", "projects"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var rows = pm.response.json();",
+                  "if (Array.isArray(rows) && rows.length > 0) { pm.environment.set('projectId', rows[0].id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /client/projects/:projectId/payments?caseId=... -> paymentId",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{client_token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/client/projects/{{projectId}}/payments?caseId={{caseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "projects", "{{projectId}}", "payments"],
+              "query": [{"key":"caseId","value":"{{caseId}}"}]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var rows = pm.response.json();",
+                  "if (Array.isArray(rows) && rows.length > 0) { pm.environment.set('paymentId', rows[0].paymentId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /client/payments/:paymentId/disputes -> disputeId",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{client_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idem_dispute}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"对该笔缴费有疑问\",\n  \"message\": \"请核对金额/渠道\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/client/payments/{{paymentId}}/disputes", "host": ["{{baseUrl}}"], "path": ["client", "payments", "{{paymentId}}", "disputes"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('disputeId', json.disputeId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /client/complaints",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{client_token}}" }],
+            "url": { "raw": "{{baseUrl}}/client/complaints", "host": ["{{baseUrl}}"], "path": ["client", "complaints"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "F. Preview (watermarked)",
+      "item": [
+        {
+          "name": "POST /files/upload-init -> presignedPutUrl,fileId,s3KeyRaw (internal only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caseId\": \"{{caseId}}\",\n  \"filename\": \"sample.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"sizeBytes\": 0\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/files/upload-init", "host": ["{{baseUrl}}"], "path": ["files", "upload-init"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('fileId', json.fileId);",
+                  "pm.environment.set('presignedPutUrl', json.presignedPutUrl);",
+                  "pm.environment.set('s3KeyRaw', json.s3KeyRaw);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT {{presignedPutUrl}} (upload PDF bytes)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/pdf" }],
+            "body": { "mode": "file", "file": {} },
+            "url": { "raw": "{{presignedPutUrl}}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200/204', function () { pm.expect([200,201,204]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /files/upload-complete (internal only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileId\": \"{{fileId}}\",\n  \"caseId\": \"{{caseId}}\",\n  \"filename\": \"sample.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"sizeBytes\": 0,\n  \"sha256\": null,\n  \"s3KeyRaw\": \"{{s3KeyRaw}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/files/upload-complete", "host": ["{{baseUrl}}"], "path": ["files", "upload-complete"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /preview/files/:fileId/tokens -> previewToken",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{external_token}}" }],
+            "url": { "raw": "{{baseUrl}}/preview/files/{{fileId}}/tokens", "host": ["{{baseUrl}}"], "path": ["preview", "files", "{{fileId}}", "tokens"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('previewToken', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /preview?token=... (PDF bytes)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{external_token}}" }],
+            "url": { "raw": "{{baseUrl}}/preview?token={{previewToken}}", "host": ["{{baseUrl}}"], "path": ["preview"], "query": [{"key":"token","value":"{{previewToken}}"}] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('content-type pdf', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'); });",
+                  "pm.test('non-empty body', function () { pm.expect(pm.response.text().length).to.be.above(10); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -190,31 +190,56 @@ public class InstructionService {
     String normalized = normalizeItemStatus(req.status());
 
     return tx.execute(principal, () -> {
-      var updated = instructionRepository.updateItemStatus(itemId, normalized, principal.userId())
+      var current = instructionRepository.findItem(itemId).orElseThrow(InstructionNotFoundException::new);
+
+      if (normalized.equals(current.status())) {
+        // No-op: do not write audit/outbox.
+        return new UpdateInstructionItemStatusResponse(itemId, current.status());
+      }
+
+      var changed = instructionRepository.changeItemStatus(itemId, current.status(), normalized, principal.userId())
           .orElseThrow(InstructionNotFoundException::new);
 
-      writeAudit(httpReq, principal.userId(), updated.groupId(),
+        writeAudit(httpReq, principal.userId(), changed.groupId(),
           "InstructionItem.StatusUpdated",
           "instruction_item",
           itemId,
           responseJson.toJson(Map.of(
               "instructionItemId", itemId,
-              "instructionId", updated.instructionId(),
-              "status", updated.status()
+            "instructionId", changed.instructionId(),
+            "fromStatus", changed.fromStatus(),
+            "toStatus", changed.toStatus(),
+            "statusVersion", changed.statusVersion()
           ))
       );
 
-      writeOutbox(updated.groupId(), null, null, principal.userId(),
+        writeOutbox(changed.groupId(), null, null, principal.userId(),
           "InstructionItem.StatusUpdated",
-          "InstructionItem.StatusUpdated:instruction_item:" + itemId + ":v1",
+          "InstructionItem.StatusUpdated:instruction_item:" + itemId + ":v" + changed.statusVersion(),
           responseJson.toJson(Map.of(
               "instructionItemId", itemId,
-              "instructionId", updated.instructionId(),
-              "status", updated.status()
+            "instructionId", changed.instructionId(),
+            "fromStatus", changed.fromStatus(),
+            "toStatus", changed.toStatus(),
+            "statusVersion", changed.statusVersion(),
+            "changedByUserId", principal.userId()
           ))
       );
 
-      return new UpdateInstructionItemStatusResponse(itemId, updated.status());
+        writeOutbox(changed.groupId(), null, null, principal.userId(),
+          "InstructionItem.StatusChanged",
+          "InstructionItem.StatusChanged:instruction_item:" + itemId + ":v" + changed.statusVersion(),
+          responseJson.toJson(Map.of(
+            "instructionItemId", itemId,
+            "instructionId", changed.instructionId(),
+            "fromStatus", changed.fromStatus(),
+            "toStatus", changed.toStatus(),
+            "statusVersion", changed.statusVersion(),
+            "changedByUserId", principal.userId()
+          ))
+        );
+
+        return new UpdateInstructionItemStatusResponse(itemId, changed.toStatus());
     });
   }
 

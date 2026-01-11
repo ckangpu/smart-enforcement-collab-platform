@@ -27,7 +27,7 @@ jobs:
           docker info
 
       - name: API tests
-        run: mvn -B -ntp -f src/api/pom.xml test
+        run: mvn -B -ntp -Pit -f src/api/pom.xml test
 
       - name: Worker tests
-        run: mvn -B -ntp -f src/api/src/worker/pom.xml test
+        run: mvn -B -ntp -Pit -f src/api/src/worker/pom.xml test

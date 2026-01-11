@@ -39,8 +39,17 @@ public class EvidenceService {
         throw new UnprocessableEntityException("CASE_NOT_IN_PROJECT");
       }
 
-      if (req.fileId() != null && !evidenceRepository.fileBelongsToProject(req.fileId(), req.projectId())) {
-        throw new UnprocessableEntityException("FILE_NOT_IN_PROJECT");
+      if (req.fileId() != null) {
+        var file = evidenceRepository.findFile(req.fileId()).orElseThrow(() -> new UnprocessableEntityException("FILE_NOT_IN_PROJECT"));
+        if (!req.projectId().equals(file.projectId())) {
+          throw new UnprocessableEntityException("FILE_NOT_IN_PROJECT");
+        }
+        if (req.caseId() != null && file.caseId() != null && !req.caseId().equals(file.caseId())) {
+          throw new UnprocessableEntityException("FILE_NOT_IN_CASE");
+        }
+        if (!"READY".equalsIgnoreCase(file.status())) {
+          throw new UnprocessableEntityException("FILE_NOT_READY");
+        }
       }
 
       UUID evidenceId = UUID.randomUUID();

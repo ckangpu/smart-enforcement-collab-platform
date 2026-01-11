@@ -158,6 +158,96 @@ class NotificationWorkerIT extends WorkerIntegrationTestBase {
     assertEquals(1, n2, "replay must not create duplicates");
   }
 
+  @Test
+  void statusChanged_notifiesAssignee_andCcIssuedByOnDone_andMergesWithinWindow() {
+    JdbcTemplate jdbc = jdbc();
+    OutboxPoller poller = new OutboxPoller(jdbc);
+
+    UUID groupA = UUID.randomUUID();
+    UUID admin = UUID.randomUUID();
+    UUID issuedBy = UUID.randomUUID();
+    UUID assignee = UUID.randomUUID();
+
+    // userB is not in groupA, used to verify guard
+    UUID userB = UUID.randomUUID();
+    seedCore(jdbc, groupA, UUID.randomUUID(), admin, assignee, userB);
+    jdbc.update("insert into app_user(id, phone, username, user_type, is_admin) values (?,?,?,?,?)",
+        issuedBy, "13920000004", "issuer", "internal", false);
+    jdbc.update("insert into user_group(user_id, group_id, role_code) values (?,?,?)", issuedBy, groupA, "member");
+
+    UUID projectA = UUID.randomUUID();
+    jdbc.update("insert into project(id, group_id, name, status, created_by) values (?,?,?,?,?)",
+        projectA, groupA, "PA", "ACTIVE", admin);
+
+    UUID instructionId = UUID.randomUUID();
+    jdbc.update("insert into instruction(id, group_id, ref_type, ref_id, title, status, issued_by, issued_at, created_by) values (?,?,?,?,?,?,?,?,?)",
+        instructionId, groupA, "project", projectA, "instr", "ISSUED", issuedBy, OffsetDateTime.now(), issuedBy);
+
+    UUID itemId = UUID.randomUUID();
+    jdbc.update("""
+        insert into instruction_item(id, instruction_id, group_id, title, due_at, status, created_by, assignee_user_id, status_version)
+        values (?,?,?,?,?,?,?,?,?)
+        """,
+        itemId, instructionId, groupA, "i1", OffsetDateTime.now().plusDays(1), "OPEN", issuedBy, assignee, 0);
+
+    // 1st change -> DONE (should notify assignee + issued_by)
+    UUID e1 = UUID.randomUUID();
+    jdbc.update("""
+        insert into event_outbox(event_id, event_type, dedupe_key, group_id, project_id, case_id, actor_user_id, payload)
+        values (?,?,?,?,?,?,?, ?::jsonb)
+        """,
+        e1,
+        "InstructionItem.StatusChanged",
+        "InstructionItem.StatusChanged:instruction_item:" + itemId + ":v1-it",
+        groupA,
+        projectA,
+        null,
+        assignee,
+        "{\"instructionItemId\":\"" + itemId + "\",\"instructionId\":\"" + instructionId + "\",\"fromStatus\":\"OPEN\",\"toStatus\":\"DONE\",\"statusVersion\":1,\"changedByUserId\":\"" + assignee + "\"}"
+    );
+
+    poller.pollOnce();
+
+    Integer assigneeN = jdbc.queryForObject(
+        "select count(1) from notification where user_id=? and type='InstructionItem.StatusChanged'",
+        Integer.class,
+        assignee
+    );
+    assertEquals(1, assigneeN);
+
+    Integer issuedByN = jdbc.queryForObject(
+        "select count(1) from notification where user_id=? and type='InstructionItem.StatusChanged'",
+        Integer.class,
+        issuedBy
+    );
+    assertEquals(1, issuedByN, "DONE should CC issued_by");
+
+    // 2nd change within 10 minutes -> OPEN (should merge, not add new)
+    UUID e2 = UUID.randomUUID();
+    jdbc.update("""
+        insert into event_outbox(event_id, event_type, dedupe_key, group_id, project_id, case_id, actor_user_id, payload)
+        values (?,?,?,?,?,?,?, ?::jsonb)
+        """,
+        e2,
+        "InstructionItem.StatusChanged",
+        "InstructionItem.StatusChanged:instruction_item:" + itemId + ":v2-it",
+        groupA,
+        projectA,
+        null,
+        assignee,
+        "{\"instructionItemId\":\"" + itemId + "\",\"instructionId\":\"" + instructionId + "\",\"fromStatus\":\"DONE\",\"toStatus\":\"OPEN\",\"statusVersion\":2,\"changedByUserId\":\"" + assignee + "\"}"
+    );
+
+    poller.pollOnce();
+
+    Integer assigneeN2 = jdbc.queryForObject(
+        "select count(1) from notification where user_id=? and type='InstructionItem.StatusChanged'",
+        Integer.class,
+        assignee
+    );
+    assertEquals(1, assigneeN2, "merge window should keep single unread notification");
+  }
+
   private void seedCore(JdbcTemplate jdbc,
                         UUID groupA,
                         UUID groupB,

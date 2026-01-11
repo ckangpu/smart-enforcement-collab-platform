@@ -1,0 +1,10 @@
+package com.secp.api.admin.dto;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+
+import java.util.List;
+
+public record AdminUpsertMembersRequest(
+    @NotEmpty List<@Valid AdminMemberUpsertRequest> members
+) {}
