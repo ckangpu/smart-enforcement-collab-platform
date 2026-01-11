@@ -1,5 +1,6 @@
 package com.secp.worker;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,6 +28,7 @@ public class OverdueInstructionScanner {
   private final JdbcTemplate jdbc;
   private final Clock clock;
 
+  @Autowired
   public OverdueInstructionScanner(JdbcTemplate jdbc) {
     this(jdbc, Clock.systemUTC());
   }

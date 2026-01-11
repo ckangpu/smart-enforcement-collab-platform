@@ -1,14 +1,17 @@
 spring:
   main:
     web-application-type: none
-  flyway:
-    enabled: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/secp
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secp}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     hikari:
       maximum-pool-size: 5
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:false}
+    url: ${SPRING_FLYWAY_URL:}
+    user: ${SPRING_FLYWAY_USER:}
+    password: ${SPRING_FLYWAY_PASSWORD:}
 
 worker:
   poll-ms: 1000

@@ -3,22 +3,25 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/secp
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secp}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     hikari:
       maximum-pool-size: 10
   flyway:
-    enabled: true
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    url: ${SPRING_FLYWAY_URL:}
+    user: ${SPRING_FLYWAY_USER:}
+    password: ${SPRING_FLYWAY_PASSWORD:}
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
 secp:
   jwt:
     issuer: secp-api
-    secret: dev-secret-change-me
+    secret: ${SECP_JWT_SECRET:dev-secret-change-me}
     ttl-seconds: 86400
   auth:
     group-cache-ttl-seconds: 45
@@ -32,12 +35,12 @@ secp:
 
   s3:
     # In tests these are overridden by Testcontainers (MinIO)
-    endpoint: ""
-    region: us-east-1
-    bucket: secp-dev
-    access-key: ""
-    secret-key: ""
-    path-style: true
+    endpoint: ${SECP_S3_ENDPOINT:}
+    region: ${SECP_S3_REGION:us-east-1}
+    bucket: ${SECP_S3_BUCKET:secp-dev}
+    access-key: ${SECP_S3_ACCESS_KEY:}
+    secret-key: ${SECP_S3_SECRET_KEY:}
+    path-style: ${SECP_S3_PATH_STYLE:true}
 
   preview:
     max-size-bytes: 52428800 # 50MB

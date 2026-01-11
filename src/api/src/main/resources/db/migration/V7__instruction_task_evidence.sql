@@ -19,9 +19,17 @@ ALTER TABLE task
 ALTER TABLE task
   ALTER COLUMN project_id SET NOT NULL;
 
-ALTER TABLE task
-  ADD CONSTRAINT IF NOT EXISTS chk_task_project_or_case
-  CHECK (project_id IS NOT NULL);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+      FROM pg_constraint
+     WHERE conname = 'chk_task_project_or_case'
+       AND conrelid = 'task'::regclass
+  ) THEN
+    EXECUTE 'ALTER TABLE task ADD CONSTRAINT chk_task_project_or_case CHECK (project_id IS NOT NULL)';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_task_project ON task(project_id);
 
@@ -65,9 +73,17 @@ CREATE TABLE IF NOT EXISTS instruction_item (
 CREATE INDEX IF NOT EXISTS idx_instruction_item_instruction ON instruction_item(instruction_id);
 CREATE INDEX IF NOT EXISTS idx_instruction_item_due ON instruction_item(due_at, status);
 
-ALTER TABLE task
-  ADD CONSTRAINT IF NOT EXISTS fk_task_instruction_item
-  FOREIGN KEY (instruction_item_id) REFERENCES instruction_item(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+      FROM pg_constraint
+     WHERE conname = 'fk_task_instruction_item'
+       AND conrelid = 'task'::regclass
+  ) THEN
+    EXECUTE 'ALTER TABLE task ADD CONSTRAINT fk_task_instruction_item FOREIGN KEY (instruction_item_id) REFERENCES instruction_item(id) ON DELETE SET NULL';
+  END IF;
+END $$;
 
 -- ---------- evidence ----------
 CREATE TABLE IF NOT EXISTS evidence (
