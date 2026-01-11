@@ -1,0 +1,1 @@
+1.先读：docs/ENGINEERING_GUIDE.md2.Copilot 必须遵守：.github/copilot-instructions.md3.所有写操作必须：事务内写业务表 + audit_log + event_outbox
