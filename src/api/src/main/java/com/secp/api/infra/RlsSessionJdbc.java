@@ -18,8 +18,8 @@ public class RlsSessionJdbc {
     }
 
     // Use set_config to avoid SQL injection in session variables.
-    jdbcTemplate.update("select set_config('app.user_id', ?, true)", userId == null ? "" : userId);
-    jdbcTemplate.update("select set_config('app.is_admin', ?, true)", isAdmin ? "true" : "false");
-    jdbcTemplate.update("select set_config('app.group_ids', ?, true)", groupIdsCsv == null ? "" : groupIdsCsv);
+    jdbcTemplate.queryForObject("select set_config('app.user_id', ?, true)", String.class, userId == null ? "" : userId);
+    jdbcTemplate.queryForObject("select set_config('app.is_admin', ?, true)", String.class, isAdmin ? "true" : "false");
+    jdbcTemplate.queryForObject("select set_config('app.group_ids', ?, true)", String.class, groupIdsCsv == null ? "" : groupIdsCsv);
   }
 }

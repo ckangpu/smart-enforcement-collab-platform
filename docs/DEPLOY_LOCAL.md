@@ -118,6 +118,29 @@ curl.exe -sS -D - http://localhost:8080/health
 
 预期输出：HTTP 200 且 body 为 `ok`。
 
+## 4.1 导入 dev seed（可选但推荐；仅本地开发/演示）
+
+用于让非开发也能按 Quickstart 直接跑通登录、项目/案件查询、外协预览等链路。
+
+```powershell
+./scripts/seed-dev.ps1
+```
+
+注意：
+- 这会直接向本地 Postgres 写入示例数据。
+- **不要在生产/类生产环境运行**。
+
+## 4.2 一键验收（DEV ONLY）
+
+脚本会按顺序执行：启动（含 `--build`）→ `/health` 轮询 → 导入 dev seed → 三类用户登录（自动解析短信验证码；解析不到会提示手动输入）→ 调用报表接口并断言关键字段，最后输出 `SMOKE PASS`。
+
+注意：
+- 仓库不会提交 `.env`；脚本会提示你从 `.env.dev.example` 生成 `.env`（仅本地开发/演示）。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1
+```
+
 ## 5. 查看日志（docker compose logs -f api / worker / minio / postgres）
 
 ```powershell
