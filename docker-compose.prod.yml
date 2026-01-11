@@ -1,0 +1,90 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: secp-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+
+      # External DB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${SECP_DB_HOST}:${SECP_DB_PORT}/${SECP_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${SECP_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${SECP_DB_PASS}
+
+      # Flyway should run only in api
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_URL: ${SPRING_FLYWAY_URL:-jdbc:postgresql://${SECP_DB_HOST}:${SECP_DB_PORT}/${SECP_DB_NAME}}
+      SPRING_FLYWAY_USER: ${SPRING_FLYWAY_USER:-${SECP_DB_USER}}
+      SPRING_FLYWAY_PASSWORD: ${SPRING_FLYWAY_PASSWORD:-${SECP_DB_PASS}}
+
+      # External Redis
+      SPRING_DATA_REDIS_HOST: ${SECP_REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: "${SECP_REDIS_PORT}"
+
+      # Storage
+      SECP_STORAGE_MODE: ${SECP_STORAGE_MODE:-s3}
+      SECP_S3_ENDPOINT: ${SECP_S3_ENDPOINT:-}
+      SECP_S3_REGION: ${SECP_S3_REGION}
+      SECP_S3_BUCKET: ${SECP_S3_BUCKET}
+      SECP_S3_ACCESS_KEY: ${SECP_S3_ACCESS_KEY}
+      SECP_S3_SECRET_KEY: ${SECP_S3_SECRET_KEY}
+      SECP_S3_PATH_STYLE: ${SECP_S3_PATH_STYLE:-false}
+
+      # Auth
+      SECP_JWT_SECRET: ${SECP_JWT_SECRET}
+
+      # Optional: logging
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+
+    restart: unless-stopped
+    healthcheck:
+      # Skeleton probe: TCP connect to 8080 (requires bash; eclipse-temurin images include it)
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: secp-worker
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+
+      # External DB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${SECP_DB_HOST}:${SECP_DB_PORT}/${SECP_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${SECP_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${SECP_DB_PASS}
+
+      # Flyway must be disabled in worker
+      SPRING_FLYWAY_ENABLED: "false"
+
+      # External Redis
+      SPRING_DATA_REDIS_HOST: ${SECP_REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: "${SECP_REDIS_PORT}"
+
+      # Storage
+      SECP_STORAGE_MODE: ${SECP_STORAGE_MODE:-s3}
+      SECP_S3_ENDPOINT: ${SECP_S3_ENDPOINT:-}
+      SECP_S3_REGION: ${SECP_S3_REGION}
+      SECP_S3_BUCKET: ${SECP_S3_BUCKET}
+      SECP_S3_ACCESS_KEY: ${SECP_S3_ACCESS_KEY}
+      SECP_S3_SECRET_KEY: ${SECP_S3_SECRET_KEY}
+      SECP_S3_PATH_STYLE: ${SECP_S3_PATH_STYLE:-false}
+
+      # Optional: logging
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
