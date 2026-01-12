@@ -130,6 +130,22 @@ curl.exe -sS -D - http://localhost:8080/health
 - 这会直接向本地 Postgres 写入示例数据。
 - **不要在生产/类生产环境运行**。
 
+## 4.1.1 DEV 管理员账号（kangpu）
+
+DEV ONLY：用于本地开发/演示的最高权限 internal 管理员账号。
+
+执行顺序：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/seed-dev.ps1
+powershell -ExecutionPolicy Bypass -File scripts/set-password-dev.ps1
+```
+
+然后在 UI 登录：
+- http://localhost:8080/ui/login.html → 选择“密码登录（internal）”
+- username：`kangpu`（或 `13777777392`）
+- password：`800810`
+
 ## 4.2 一键验收（DEV ONLY）
 
 脚本会按顺序执行：启动（含 `--build`）→ `/health` 轮询 → 导入 dev seed → 三类用户登录（自动解析短信验证码；解析不到会提示手动输入）→ 调用报表接口并断言关键字段，最后输出 `SMOKE PASS`。

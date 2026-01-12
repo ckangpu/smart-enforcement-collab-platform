@@ -13,6 +13,7 @@ BEGIN;
 --   internal  aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2 (13900000002)
 --   client    aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1 (13900000001)
 --   external  aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3 (13900000003)
+--   dev admin aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9 (kangpu / 13777777392)
 -- Project
 --   33333333-3333-3333-3333-333333333333
 -- Case
@@ -31,9 +32,10 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 -- 3) users
 INSERT INTO app_user (id, phone, username, user_type, is_admin, customer_id)
 VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid, '13900000002', 'internal_13900000002', 'internal', false, NULL),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid, '13900000002', 'internal_13900000002', 'internal', true, NULL),
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid, '13900000001', 'client_13900000001',   'client',   false, '22222222-2222-2222-2222-222222222222'::uuid),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3'::uuid, '13900000003', 'external_13900000003', 'external', false, NULL)
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3'::uuid, '13900000003', 'external_13900000003', 'external', false, NULL),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9'::uuid, '13777777392', 'kangpu',               'internal', true, NULL)
 ON CONFLICT (phone) DO UPDATE
 SET username = EXCLUDED.username,
     user_type = EXCLUDED.user_type,
@@ -45,8 +47,10 @@ INSERT INTO user_group (user_id, group_id, role_code)
 VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'member'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'member'),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'member')
-ON CONFLICT (user_id, group_id) DO NOTHING;
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'member'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa9'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'admin')
+ON CONFLICT (user_id, group_id) DO UPDATE
+SET role_code = EXCLUDED.role_code;
 
 -- 5) project (bind group + customer)
 INSERT INTO project (id, group_id, customer_id, name, status, created_by, created_at, updated_at)

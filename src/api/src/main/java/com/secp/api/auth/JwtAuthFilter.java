@@ -24,7 +24,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getRequestURI();
-    return path.equals("/health") || path.startsWith("/auth/");
+    if (path == null) return false;
+    if (path.equals("/health") || path.startsWith("/auth/")) return true;
+
+    // Static UI and common static assets must be publicly accessible.
+    if (path.equals("/ui") || path.startsWith("/ui/")) return true;
+    if (path.equals("/favicon.ico")) return true;
+
+    String lower = path.toLowerCase();
+    return lower.endsWith(".css")
+        || lower.endsWith(".js")
+        || lower.endsWith(".png")
+        || lower.endsWith(".svg")
+        || lower.endsWith(".map")
+        || lower.endsWith(".ico")
+        || lower.endsWith(".jpg")
+        || lower.endsWith(".jpeg")
+        || lower.endsWith(".gif")
+        || lower.endsWith(".webp")
+        || lower.endsWith(".woff")
+        || lower.endsWith(".woff2")
+        || lower.endsWith(".ttf")
+        || lower.endsWith(".eot");
   }
 
   @Override
@@ -35,19 +56,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     if (auth == null || !auth.startsWith("Bearer ")) {
       response.setStatus(401);
       response.setContentType("application/json");
-      response.getWriter().write("{\"error\":\"UNAUTHORIZED\"}");
+      response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"error\":\"UNAUTHORIZED\",\"message\":\"未登录或登录已失效，请重新登录。\"}");
       return;
     }
 
     String token = auth.substring("Bearer ".length());
+    AuthPrincipal principal;
     try {
-      AuthPrincipal principal = jwtService.parsePrincipal(jwtService.verify(token));
-      AuthContext.set(principal);
-      filterChain.doFilter(request, response);
+      principal = jwtService.parsePrincipal(jwtService.verify(token));
     } catch (Exception ex) {
       response.setStatus(401);
       response.setContentType("application/json");
-      response.getWriter().write("{\"error\":\"INVALID_TOKEN\"}");
+      response.getWriter().write("{\"code\":\"INVALID_TOKEN\",\"error\":\"INVALID_TOKEN\",\"message\":\"登录已失效，请重新登录。\"}");
+      return;
+    }
+
+    AuthContext.set(principal);
+    try {
+      filterChain.doFilter(request, response);
     } finally {
       AuthContext.clear();
     }

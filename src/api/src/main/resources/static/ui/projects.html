@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的项目 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="nav">
+    <a class="active" href="/ui/projects.html" data-i18n-key="common.projects">我的项目</a>
+    <a href="/ui/tasks.html" data-i18n-key="common.tasks">我的任务</a>
+    <div class="spacer"></div>
+    <button id="logoutBtn" class="secondary" data-i18n-key="common.logout">退出登录</button>
+  </div>
+
+  <div class="container">
+    <h1 data-i18n-key="projects.title">我的项目</h1>
+    <div id="forbidden" class="alert" style="display:none"></div>
+    <div id="error" class="alert" style="display:none"></div>
+
+    <div class="card">
+      <div class="note" data-i18n-key="projects.tip">提示：PowerShell 的 curl 是别名（Invoke-WebRequest），命令行请使用 curl.exe。</div>
+      <table class="table" id="tbl">
+        <thead>
+          <tr>
+            <th data-i18n-key="projects.table.projectId">项目ID</th>
+            <th data-i18n-key="projects.table.name">项目名称</th>
+            <th data-i18n-key="projects.table.status">状态</th>
+            <th data-i18n-key="projects.table.createdAt">创建时间</th>
+            <th data-i18n-key="common.operation">操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, getToken, clearToken, authHeader, formatDate, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $('error');
+    const forbiddenEl = $('forbidden');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function showForbidden(msg) {
+      forbiddenEl.textContent = msg || '';
+      forbiddenEl.style.display = msg ? 'block' : 'none';
+    }
+
+    function logout() {
+      clearToken();
+      window.location.replace('/ui/login.html?reason=logout');
+    }
+
+    $('logoutBtn').addEventListener('click', logout);
+
+    async function loadProjects() {
+      const t = getToken();
+      if (!t) {
+        window.location.replace('/ui/login.html?reason=unauthorized');
+        return;
+      }
+
+      showError('');
+      showForbidden('');
+
+      let res;
+      try {
+        res = await fetch('/me/projects', { headers: authHeader() });
+      } catch (e) {
+        showError(`${t('common.requestFailed')}：${e?.message || e}`);
+        return;
+      }
+
+      if (res.status === 401) {
+        clearToken();
+        window.location.replace('/ui/login.html?reason=unauthorized&message=' + encodeURIComponent(t('error.unauthorized')));
+        return;
+      }
+
+      if (res.status === 403) {
+        showForbidden(t('projects.forbidden'));
+        // 仍显示退出按钮
+        return;
+      }
+
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        showError(`加载失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        return;
+      }
+
+      let arr;
+      try {
+        arr = JSON.parse(text);
+      } catch {
+        showError(`${t('common.responseNotJson')}：${text}`, text);
+        return;
+      }
+
+      if (!Array.isArray(arr)) {
+        showError(`${t('common.responseFormatError')}：期望数组`, text);
+        return;
+      }
+
+      const tbody = $('tbl').querySelector('tbody');
+      tbody.innerHTML = '';
+
+      if (arr.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="5" class="note">${escapeHtml(t('common.empty'))}</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const p of arr) {
+        const projectId = p.projectId ?? p.id ?? '';
+        const name = p.name ?? '';
+        const status = p.status ?? '';
+        const createdAt = formatDate(p.createdAt);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(projectId)}</td>
+          <td>${escapeHtml(name)}</td>
+          <td>${escapeHtml(status)}</td>
+          <td>${escapeHtml(createdAt)}</td>
+          <td><a href="/ui/project_detail.html?projectId=${encodeURIComponent(projectId)}">${escapeHtml(t('common.viewDetail'))}</a></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    await initUiI18n();
+    applyI18n(document);
+    loadProjects();
+  </script>
+</body>
+</html>

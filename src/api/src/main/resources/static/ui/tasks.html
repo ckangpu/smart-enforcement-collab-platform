@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的任务 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="nav">
+    <a href="/ui/projects.html" data-i18n-key="common.projects">我的项目</a>
+    <a class="active" href="/ui/tasks.html" data-i18n-key="common.tasks">我的任务</a>
+    <div class="spacer"></div>
+    <button id="logoutBtn" class="secondary" data-i18n-key="common.logout">退出登录</button>
+  </div>
+
+  <div class="container">
+    <h1 data-i18n-key="tasks.title">我的任务</h1>
+    <div id="error" class="alert" style="display:none"></div>
+
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="status" data-i18n-key="tasks.filterStatus">状态筛选（前端过滤）</label>
+          <select id="status">
+            <option value="" data-i18n-key="common.all">全部</option>
+          </select>
+        </div>
+      </div>
+
+      <table class="table" id="tbl">
+        <thead>
+          <tr>
+            <th data-i18n-key="tasks.table.taskId">任务ID</th>
+            <th data-i18n-key="tasks.table.title">标题</th>
+            <th data-i18n-key="tasks.table.status">状态</th>
+            <th data-i18n-key="tasks.table.caseId">案件ID</th>
+            <th data-i18n-key="tasks.table.projectId">项目ID</th>
+            <th data-i18n-key="tasks.table.dueAt">截止时间</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, clearToken, apiFetch, formatDate, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $('error');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function logout() {
+      clearToken();
+      window.location.replace('/ui/login.html?reason=logout');
+    }
+
+    $('logoutBtn').addEventListener('click', logout);
+
+    let allTasks = [];
+
+    function render() {
+      const status = $('status').value;
+      const filtered = status ? allTasks.filter(t => String(t.status ?? '') === status) : allTasks;
+
+      const tbody = $('tbl').querySelector('tbody');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="6" class="note">${escapeHtml(t('common.empty'))}</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const t of filtered) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(t.taskId ?? t.id ?? '')}</td>
+          <td>${escapeHtml(t.title ?? '')}</td>
+          <td>${escapeHtml(t.status ?? '')}</td>
+          <td>${escapeHtml(t.caseId ?? '')}</td>
+          <td>${escapeHtml(t.projectId ?? '')}</td>
+          <td>${escapeHtml(formatDate(t.dueAt))}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function updateStatusOptions() {
+      const sel = $('status');
+      const values = Array.from(new Set(allTasks.map(t => String(t.status ?? '')).filter(v => v)));
+      sel.innerHTML = `<option value="">${escapeHtml(t('common.all'))}</option>`;
+      for (const v of values) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      }
+    }
+
+    $('status').addEventListener('change', render);
+
+    async function loadTasks() {
+      showError('');
+
+      let res;
+      try {
+        res = await apiFetch('/me/tasks', { method: 'GET' });
+      } catch (e) {
+        // apiFetch 已负责跳转登录
+        return;
+      }
+
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        showError(`加载失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        return;
+      }
+
+      let arr;
+      try {
+        arr = JSON.parse(text);
+      } catch {
+        showError(`${t('common.responseNotJson')}：${text}`, text);
+        return;
+      }
+
+      if (!Array.isArray(arr)) {
+        showError(`${t('common.responseFormatError')}：期望数组`, text);
+        return;
+      }
+
+      allTasks = arr;
+      updateStatusOptions();
+      render();
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    await initUiI18n();
+    applyI18n(document);
+    loadTasks();
+  </script>
+</body>
+</html>

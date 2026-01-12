@@ -26,6 +26,9 @@ jobs:
           docker version
           docker info
 
+      - name: Chinese UI regression check
+        run: pwsh ./scripts/check-ui-chinese.ps1
+
       - name: API tests
         run: mvn -B -ntp -Pit -f src/api/pom.xml test
 

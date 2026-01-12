@@ -17,6 +17,51 @@ curl.exe -sS -D - http://localhost:8080/health
 docker compose logs -f api
 ```
 
+## 2.1 验收命令（PowerShell 可复制版）
+
+> 注意：PowerShell 的 `curl` 是别名（Invoke-WebRequest），请使用 `curl.exe`。
+
+```powershell
+copy .env.dev.example .env
+docker compose up -d
+powershell -ExecutionPolicy Bypass -File scripts/seed-dev.ps1
+curl.exe -sS http://localhost:8080/health
+powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1
+```
+
+## 2.2 中文化回归检查（可选）
+
+本项目要求“用户可见文案为中文”。可用脚本做常见英文词回归检查：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-ui-chinese.ps1 -VerboseOutput
+```
+
+可选 CI（GitHub Actions）片段示例：
+
+```yaml
+name: ui-chinese-check
+on:
+	pull_request:
+	push:
+		branches: [ main ]
+
+jobs:
+	check:
+		runs-on: windows-latest
+		steps:
+			- uses: actions/checkout@v4
+			- name: 检查 UI/模板英文词回归
+				shell: pwsh
+				run: ./scripts/check-ui-chinese.ps1 -VerboseOutput
+```
+
+验证 A4 导出（示例，curl.exe 单行）：
+
+```powershell
+curl.exe -sS -H "Authorization: Bearer <INTERNAL_TOKEN>" http://localhost:8080/projects/<PROJECT_ID>/a4.pdf -o project_a4.pdf
+```
+
 ## 3. 文档入口（必须用相对路径链接）
 
 - 本地部署：docs/DEPLOY_LOCAL.md

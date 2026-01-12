@@ -1,5 +1,6 @@
 package com.secp.api.auth;
 
+import com.secp.api.auth.dto.PasswordLoginRequest;
 import com.secp.api.auth.dto.SendSmsRequest;
 import com.secp.api.auth.dto.VerifySmsRequest;
 import jakarta.validation.Valid;
@@ -25,6 +26,12 @@ public class AuthController {
   @PostMapping("/sms/verify")
   public ResponseEntity<?> verify(@Valid @RequestBody VerifySmsRequest req) {
     String jwt = authService.verifyAndIssueJwt(req.phone(), req.code());
+    return ResponseEntity.ok(Map.of("token", jwt));
+  }
+
+  @PostMapping("/password/login")
+  public ResponseEntity<?> passwordLogin(@Valid @RequestBody PasswordLoginRequest req) {
+    String jwt = authService.passwordLoginAndIssueJwt(req.username(), req.password());
     return ResponseEntity.ok(Map.of("token", jwt));
   }
 }

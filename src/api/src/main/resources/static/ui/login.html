@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登录 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="container">
+    <h1 data-i18n-key="login.title">登录</h1>
+
+    <div class="actions" style="margin: 8px 0 12px 0">
+      <button id="tabSms" class="secondary" data-i18n-key="login.tabSms">短信登录</button>
+      <button id="tabPwd" class="secondary" data-i18n-key="login.tabPassword">密码登录（仅限内部账号）</button>
+    </div>
+
+    <div id="banner" class="alert" style="display:none"></div>
+
+    <div class="card">
+      <div id="panelSms">
+        <div class="field">
+          <label for="phone" data-i18n-key="login.phone">手机号</label>
+          <input id="phone" type="text" data-i18n-placeholder="login.phonePlaceholder" placeholder="例如：13900000002" />
+          <div class="note" data-i18n-key="login.smsHint">提示：本地演示模式下验证码在 API 日志中输出。</div>
+        </div>
+
+        <div class="actions">
+          <button id="sendBtn" data-i18n-key="login.sendCode">发送验证码</button>
+          <span id="sendStatus" class="note"></span>
+        </div>
+
+        <div style="height: 10px"></div>
+
+        <div class="field">
+          <label for="code" data-i18n-key="login.code">验证码</label>
+          <input id="code" type="text" data-i18n-placeholder="login.codePlaceholder" placeholder="从 API 日志获取" />
+        </div>
+
+        <div class="actions">
+          <button id="loginBtn" data-i18n-key="common.login">登录</button>
+          <button id="clearBtn" class="secondary" data-i18n-key="common.clearLocalToken">清除本地令牌</button>
+        </div>
+      </div>
+
+      <div id="panelPwd" style="display:none">
+        <div class="field">
+          <label for="username" data-i18n-key="login.username">用户名或手机号</label>
+          <input id="username" type="text" data-i18n-placeholder="login.usernamePlaceholder" placeholder="例如：kangpu 或 13777777392" />
+          <div class="note" data-i18n-key="login.passwordHint">仅限内部账号：需要管理员先设置密码。</div>
+        </div>
+
+        <div class="field">
+          <label for="password" data-i18n-key="login.password">密码</label>
+          <input id="password" type="password" data-i18n-placeholder="login.passwordPlaceholder" placeholder="请输入密码" />
+        </div>
+
+        <div class="actions">
+          <button id="pwdLoginBtn" data-i18n-key="common.login">登录</button>
+          <button id="clearBtn2" class="secondary" data-i18n-key="common.clearLocalToken">清除本地令牌</button>
+        </div>
+      </div>
+
+      <div id="error" class="alert" style="display:none"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, setToken, clearToken, showReasonBanner, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const banner = $('banner');
+    const errorEl = $('error');
+    const sendStatus = $('sendStatus');
+
+    const panelSms = $('panelSms');
+    const panelPwd = $('panelPwd');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function setTab(tab) {
+      showError('');
+      if (tab === 'pwd') {
+        panelSms.style.display = 'none';
+        panelPwd.style.display = 'block';
+      } else {
+        panelSms.style.display = 'block';
+        panelPwd.style.display = 'none';
+      }
+    }
+
+    function jsonHeaders() {
+      return { 'Content-Type': 'application/json' };
+    }
+
+    async function sendCode() {
+      showError('');
+      sendStatus.textContent = '';
+
+      const phone = $('phone').value.trim();
+      if (!phone) {
+        showError('请输入手机号');
+        return;
+      }
+
+      $('sendBtn').disabled = true;
+      try {
+        const res = await fetch('/auth/sms/send', {
+          method: 'POST',
+          headers: jsonHeaders(),
+          body: JSON.stringify({ phone })
+        });
+
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          showError(`发送失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          return;
+        }
+        sendStatus.textContent = t('login.sendOk');
+      } catch (e) {
+        showError(`发送异常：${e?.message || e}`);
+      } finally {
+        $('sendBtn').disabled = false;
+      }
+    }
+
+    async function login() {
+      showError('');
+
+      const phone = $('phone').value.trim();
+      const code = $('code').value.trim();
+      if (!phone) {
+        showError('请输入手机号');
+        return;
+      }
+      if (!code) {
+        showError('请输入验证码');
+        return;
+      }
+
+      $('loginBtn').disabled = true;
+      try {
+        const res = await fetch('/auth/sms/verify', {
+          method: 'POST',
+          headers: jsonHeaders(),
+          body: JSON.stringify({ phone, code })
+        });
+
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          showError(`登录失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          return;
+        }
+
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          showError(`登录返回不是 JSON：${text}`);
+          return;
+        }
+
+        if (!json.token) {
+          showError('登录成功但未返回令牌');
+          return;
+        }
+
+        setToken(json.token);
+        window.location.replace('/ui/projects.html');
+      } catch (e) {
+        showError(`登录异常：${e?.message || e}`);
+      } finally {
+        $('loginBtn').disabled = false;
+      }
+    }
+
+    async function passwordLogin() {
+      showError('');
+
+      const username = $('username').value.trim();
+      const password = $('password').value;
+      if (!username) {
+        showError('请输入用户名或手机号');
+        return;
+      }
+      if (!password) {
+        showError('请输入密码');
+        return;
+      }
+
+      $('pwdLoginBtn').disabled = true;
+      try {
+        const res = await fetch('/auth/password/login', {
+          method: 'POST',
+          headers: jsonHeaders(),
+          body: JSON.stringify({ username, password })
+        });
+
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          showError(`登录失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          return;
+        }
+
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          showError(`登录返回不是 JSON：${text}`);
+          return;
+        }
+
+        if (!json.token) {
+          showError('登录成功但未返回令牌');
+          return;
+        }
+
+        setToken(json.token);
+        window.location.replace('/ui/projects.html');
+      } catch (e) {
+        showError(`登录异常：${e?.message || e}`);
+      } finally {
+        $('pwdLoginBtn').disabled = false;
+      }
+    }
+
+    $('tabSms').addEventListener('click', () => setTab('sms'));
+    $('tabPwd').addEventListener('click', () => setTab('pwd'));
+
+    $('sendBtn').addEventListener('click', sendCode);
+    $('loginBtn').addEventListener('click', login);
+    $('pwdLoginBtn').addEventListener('click', passwordLogin);
+    $('clearBtn').addEventListener('click', () => {
+      clearToken();
+      showError('已清除本地令牌');
+    });
+
+    $('clearBtn2').addEventListener('click', () => {
+      clearToken();
+      showError('已清除本地令牌');
+    });
+
+    await initUiI18n();
+    applyI18n(document);
+    showReasonBanner(banner);
+    setTab('sms');
+  </script>
+</body>
+</html>

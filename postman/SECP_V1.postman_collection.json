@@ -297,7 +297,55 @@
       ]
     },
     {
-      "name": "D. Internal core",
+      "name": "D. Project Detail & A4 Export",
+      "item": [
+        {
+          "name": "GET /projects/:projectId/detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}/detail", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}", "detail"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/:projectId/a4.pdf",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{internal_token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}/a4.pdf", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}", "a4.pdf"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('content-type is pdf', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E. Internal core",
       "item": [
         {
           "name": "POST /instructions -> instructionId",
@@ -514,7 +562,7 @@
       ]
     },
     {
-      "name": "E. Client read + dispute",
+      "name": "F. Client read + dispute",
       "item": [
         {
           "name": "GET /client/projects",
@@ -603,7 +651,7 @@
       ]
     },
     {
-      "name": "F. Preview (watermarked)",
+      "name": "G. Preview (watermarked)",
       "item": [
         {
           "name": "POST /files/upload-init -> presignedPutUrl,fileId,s3KeyRaw (internal only)",

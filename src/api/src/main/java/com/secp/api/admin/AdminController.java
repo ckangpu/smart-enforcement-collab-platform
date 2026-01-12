@@ -65,4 +65,13 @@ public class AdminController {
     AuthPrincipal principal = AuthContext.getRequired();
     return ResponseEntity.ok(adminService.listCases(principal, projectId));
   }
+
+  @PostMapping("/users/{userId}/password")
+  public ResponseEntity<AdminOkResponse> setUserPassword(@PathVariable UUID userId,
+                                                         @Valid @RequestBody AdminSetPasswordRequest req,
+                                                         HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    adminService.setUserPassword(principal, userId, req, httpReq);
+    return ResponseEntity.ok(new AdminOkResponse(true));
+  }
 }

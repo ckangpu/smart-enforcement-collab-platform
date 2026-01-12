@@ -16,6 +16,7 @@ public class AuthService {
   private final RlsSessionJdbc rlsSessionJdbc;
   private final SmsCodeService smsCodeService;
   private final JwtService jwtService;
+  private final PasswordHasher passwordHasher;
 
   public void sendSms(String phone) {
     smsCodeService.sendCode(phone);
@@ -41,6 +42,42 @@ public class AuthService {
         String.class,
         userId
     ));
+
+    AuthPrincipal principal = new AuthPrincipal(userId, isAdmin, username, userType);
+    return jwtService.sign(principal);
+  }
+
+  @Transactional
+  public String passwordLoginAndIssueJwt(String usernameOrPhone, String password) {
+    // For auth flow, use admin session (so we can lookup user regardless of RLS).
+    rlsSessionJdbc.applyRlsSession("", true, "");
+
+    var rows = jdbc.queryForList(
+        "select id, username, is_admin, user_type, password_hash from app_user where username=? or phone=? limit 1",
+        usernameOrPhone,
+        usernameOrPhone
+    );
+
+    if (rows.isEmpty()) {
+      // Do not leak whether user exists.
+      throw new IllegalArgumentException("INVALID_CREDENTIALS");
+    }
+
+    var userRow = rows.getFirst();
+    var userType = String.valueOf(userRow.get("user_type"));
+    if (!"internal".equals(userType)) {
+      // Requirement: non-internal password login is forbidden.
+      throw new AuthForbiddenException();
+    }
+
+    String passwordHash = (String) userRow.get("password_hash");
+    if (!passwordHasher.matches(password, passwordHash)) {
+      throw new IllegalArgumentException("INVALID_CREDENTIALS");
+    }
+
+    UUID userId = (UUID) userRow.get("id");
+    String username = (String) userRow.get("username");
+    boolean isAdmin = Boolean.TRUE.equals(userRow.get("is_admin"));
 
     AuthPrincipal principal = new AuthPrincipal(userId, isAdmin, username, userType);
     return jwtService.sign(principal);

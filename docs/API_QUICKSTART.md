@@ -105,6 +105,37 @@ curl.exe -sS -X POST "$Base/auth/sms/verify" -H "Content-Type: $Json" -d '{"phon
 
 把返回的 `token` 人工复制到 `$InternalToken`。
 
+### 3.x 密码登录（可选，仅 internal）
+
+新增接口：
+- `POST /auth/password/login`（仅允许 `user_type=internal`，否则 403）
+
+注意：首次使用前需要 **admin** 给该 internal 用户设置密码：
+- `POST /admin/users/{userId}/password`
+
+> 安全提醒：以下示例仅用于本地开发/演示；不要在生产环境使用弱密码。
+
+dev seed 下 internal 用户固定为 admin：
+
+```powershell
+$InternalUserId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"
+```
+
+1) 先用短信登录拿到 `$InternalToken`（见 3.1），然后设置密码：
+
+```powershell
+curl.exe -sS -X POST "$Base/admin/users/$InternalUserId/password" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d '{"password":"admin123"}'
+```
+
+2) 用用户名+密码登录拿 token（这一步不需要 Authorization header）：
+
+```powershell
+curl.exe -sS -X POST "$Base/auth/password/login" -H "Content-Type: $Json" -d '{"username":"internal_13900000002","password":"admin123"}'
+```
+
+- 期望：HTTP 200
+- 关键返回：`token`（示例：`{"token":"<JWT>"}`）
+
 ### 3.2 client 登录（获取 $ClientToken）
 
 > 重要：`/auth/**` 路径本身不区分 internal/client。
@@ -177,6 +208,28 @@ $InternalUserId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"
 
 curl.exe -sS -X POST "$Base/admin/projects/$ProjectId/members" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"userId\":\"$InternalUserId\",\"role\":\"member\"}"
 curl.exe -sS -X POST "$Base/admin/cases/$CaseId/members"     -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"userId\":\"$InternalUserId\",\"role\":\"assignee\"}"
+```
+
+### 4.0.1 项目详情（执行律师工作台） `GET /projects/{projectId}/detail`
+
+说明：该接口为 **internal-only**（外协 / client 不可访问）。不可见统一返回 404。
+
+PowerShell 单行示例：
+
+```powershell
+curl.exe -sS -H "Authorization: Bearer $InternalToken" "$Base/projects/$ProjectId/detail"
+```
+
+### 4.0.2 A4 PDF 打印导出 `GET /projects/{projectId}/a4.pdf`
+
+返回：
+- `Content-Type: application/pdf`
+- `Content-Disposition: inline; filename=Project_<projectId>.pdf`
+
+PowerShell 单行示例（保存到本地文件）：
+
+```powershell
+curl.exe -sS -H "Authorization: Bearer $InternalToken" -o "project_$ProjectId.pdf" "$Base/projects/$ProjectId/a4.pdf"
 ```
 
 ### 4.1 创建指令（草稿） `POST /instructions`

@@ -2,6 +2,7 @@ package com.secp.api.admin;
 
 import com.secp.api.admin.dto.*;
 import com.secp.api.auth.AuthPrincipal;
+import com.secp.api.auth.PasswordHasher;
 import com.secp.api.infra.RequestIdFilter;
 import com.secp.api.infra.tx.TransactionalExecutor;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,56 @@ public class AdminService {
   private final TransactionalExecutor tx;
   private final JdbcTemplate jdbc;
   private final AdminRepository adminRepository;
+  private final PasswordHasher passwordHasher;
+
+  public void setUserPassword(AuthPrincipal principal,
+                              UUID userId,
+                              AdminSetPasswordRequest req,
+                              HttpServletRequest httpReq) {
+    tx.run(principal, () -> {
+      if (!principal.isAdmin()) {
+        throw new AdminForbiddenException();
+      }
+
+      var rows = jdbc.queryForList("select id, user_type from app_user where id=?", userId);
+      if (rows.isEmpty()) {
+        throw new AdminNotFoundException();
+      }
+
+      String userType = String.valueOf(rows.getFirst().get("user_type"));
+      if (!"internal".equals(userType)) {
+        // Do not allow setting passwords for client/external users.
+        throw new AdminForbiddenException();
+      }
+
+      String hash = passwordHasher.hash(req.password());
+
+      jdbc.update(
+          "update app_user set password_hash=?, password_salt=null, password_updated_at=now() where id=?",
+          hash,
+          userId
+      );
+
+      // Audit/outbox within the same transaction (write operation rule).
+      // group_id is optional for user object; keep it null.
+      writeAudit(httpReq, principal.userId(), null, "admin_set_password", "app_user", userId,
+          toJson(Map.of(
+              "userId", userId,
+              "targetUserType", userType
+          ))
+      );
+
+      String rid = (String) httpReq.getAttribute(RequestIdFilter.REQ_ID_ATTR);
+      writeOutbox(null, null, null, principal.userId(),
+          "User.PasswordSet",
+          "User.PasswordSet:user:" + userId + ":request:" + rid + ":v1",
+          toJson(Map.of(
+              "userId", userId,
+              "targetUserType", userType
+          ))
+      );
+    });
+  }
   public AdminCreateProjectResponse createProject(AuthPrincipal principal,
                                                   AdminCreateProjectRequest req,
                                                   HttpServletRequest httpReq) {

@@ -12,6 +12,11 @@ RUN mvn -f src/api/pom.xml -DskipTests package
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
+# Ensure Chinese fonts are available for PDF rendering (OpenHTMLtoPDF/PDFBox).
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends fontconfig fonts-noto-cjk \
+	&& rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /workspace/src/api/target/*.jar /app/app.jar
 
 EXPOSE 8080

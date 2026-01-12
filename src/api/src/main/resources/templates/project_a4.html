@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>项目详情（A4打印） {{PROJECT_ID}}</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    body { font-family: "Noto Sans CJK SC","Noto Sans CJK","SimSun","Microsoft YaHei",sans-serif; font-size: 11px; color: #000; }
+    h1 { font-size: 16px; margin: 0 0 8px 0; }
+    h2 { font-size: 13px; margin: 14px 0 6px 0; }
+    .meta { font-size: 10px; color: #333; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; word-break: break-word; }
+    th.k { width: 28%; background: #f3f3f3; }
+    .small td, .small th { font-size: 10px; }
+  </style>
+</head>
+<body>
+  <h1>项目详情（A4 打印）</h1>
+  <div class="meta">项目ID：{{PROJECT_ID}}</div>
+
+  <h2>1. 项目基础信息</h2>
+  <table class="small">
+    <tbody>
+      {{PROJECT_INFO_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>2. 项目成员</h2>
+  <table class="small">
+    <thead>
+      <tr><th>用户ID</th><th>角色</th><th>用户名</th><th>手机号</th></tr>
+    </thead>
+    <tbody>
+      {{PROJECT_MEMBERS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>3. 案件成员</h2>
+  <table class="small">
+    <thead>
+      <tr><th>案件ID</th><th>用户ID</th><th>角色</th><th>用户名</th><th>手机号</th></tr>
+    </thead>
+    <tbody>
+      {{CASE_MEMBERS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>4. 案件列表</h2>
+  <table class="small">
+    <thead>
+      <tr><th>案件ID</th><th>案件标题</th><th>状态</th><th>创建时间</th></tr>
+    </thead>
+    <tbody>
+      {{CASES_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>5. 任务列表（含仅项目级任务）</h2>
+  <table class="small">
+    <thead>
+      <tr><th>任务ID</th><th>标题</th><th>状态</th><th>优先级</th><th>案件ID</th><th>指令项ID</th><th>截止时间</th><th>负责人用户ID</th></tr>
+    </thead>
+    <tbody>
+      {{TASKS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>6. 指令汇总</h2>
+  <div class="meta">超期总数：{{INSTRUCTION_OVERDUE_TOTAL}}</div>
+  <table class="small">
+    <thead>
+      <tr><th>指令ID</th><th>标题</th><th>状态</th><th>版本</th><th>截止时间</th><th>下发时间</th><th>总项数</th><th>已完成项数</th><th>超期项数</th></tr>
+    </thead>
+    <tbody>
+      {{INSTRUCTIONS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>7. 回款汇总（有效回款）</h2>
+  <table class="small">
+    <tbody>
+      {{PAYMENTS_ROWS}}
+    </tbody>
+  </table>
+</body>
+</html>

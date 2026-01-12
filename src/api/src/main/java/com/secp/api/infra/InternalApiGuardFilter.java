@@ -24,10 +24,33 @@ public class InternalApiGuardFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getRequestURI();
-    return path.equals("/health")
+    if (path == null) return false;
+    if (path.equals("/health")
         || path.startsWith("/auth/")
         || path.startsWith("/client/")
-        || path.startsWith("/preview/");
+        || path.startsWith("/preview/")) {
+      return true;
+    }
+
+    // Static UI and common static assets must be publicly accessible.
+    if (path.equals("/ui") || path.startsWith("/ui/")) return true;
+    if (path.equals("/favicon.ico")) return true;
+
+    String lower = path.toLowerCase();
+    return lower.endsWith(".css")
+        || lower.endsWith(".js")
+        || lower.endsWith(".png")
+        || lower.endsWith(".svg")
+        || lower.endsWith(".map")
+        || lower.endsWith(".ico")
+        || lower.endsWith(".jpg")
+        || lower.endsWith(".jpeg")
+        || lower.endsWith(".gif")
+        || lower.endsWith(".webp")
+        || lower.endsWith(".woff")
+        || lower.endsWith(".woff2")
+        || lower.endsWith(".ttf")
+        || lower.endsWith(".eot");
   }
 
   @Override
@@ -38,7 +61,7 @@ public class InternalApiGuardFilter extends OncePerRequestFilter {
     if (p == null) {
       response.setStatus(401);
       response.setContentType("application/json");
-      response.getWriter().write("{\"error\":\"UNAUTHORIZED\"}");
+      response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"error\":\"UNAUTHORIZED\",\"message\":\"未登录或登录已失效，请重新登录。\"}");
       return;
     }
 
@@ -49,6 +72,6 @@ public class InternalApiGuardFilter extends OncePerRequestFilter {
 
     response.setStatus(403);
     response.setContentType("application/json");
-    response.getWriter().write("{\"error\":\"FORBIDDEN\"}");
+    response.getWriter().write("{\"code\":\"FORBIDDEN\",\"error\":\"FORBIDDEN\",\"message\":\"仅限内部账号访问。\"}");
   }
 }

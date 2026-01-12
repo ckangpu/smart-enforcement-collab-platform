@@ -16,6 +16,24 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Invoke-NativeNoStop {
+  param(
+    [Parameter(Mandatory = $true)]
+    [scriptblock]$Action
+  )
+
+  # Windows PowerShell 5.1 may treat native stderr output as non-terminating errors.
+  # With $ErrorActionPreference = 'Stop', that would abort the script even when the
+  # native command succeeds. We temporarily disable 'Stop' and rely on $LASTEXITCODE.
+  $old = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    & $Action
+  } finally {
+    $ErrorActionPreference = $old
+  }
+}
+
 function Fail([string]$message) {
   throw $message
 }
@@ -81,15 +99,17 @@ function IsFlywayChecksumMismatch([string]$logs) {
 
 function ResetComposeState() {
   Write-Warning "Resetting docker compose state (down -v) due to Flyway validation failure. This will delete local dev volumes."
-  docker compose down -v | Out-Host
+  Invoke-NativeNoStop { docker compose down -v | Out-Host }
   if ($LASTEXITCODE -ne 0) { throw "docker compose down -v failed ($LASTEXITCODE)" }
 }
 
-function ComposeUp([string]$args = "-d --build") {
+function ComposeUp([string[]]$composeArgs = @('-d', '--build')) {
   # IMPORTANT: stream output line-by-line so users don't think it's "hung",
   # and so callers can capture full logs with Tee-Object.
   $outLines = @()
-  docker compose up $args 2>&1 | Tee-Object -Variable outLines | Out-Host
+  Invoke-NativeNoStop {
+    docker compose up @composeArgs 2>&1 | Tee-Object -Variable outLines | Out-Host
+  }
   if ($LASTEXITCODE -eq 0) {
     return
   }
@@ -103,10 +123,10 @@ function ComposeUp([string]$args = "-d --build") {
   if ($m.Success) {
     $conflictName = $m.Groups[1].Value
     Write-Warning "docker compose up failed due to name conflict: $conflictName. Will remove and retry once."
-    docker rm -f $conflictName | Out-Host
+    Invoke-NativeNoStop { docker rm -f $conflictName | Out-Host }
     if ($LASTEXITCODE -ne 0) { throw "docker rm -f $conflictName failed ($LASTEXITCODE)" }
 
-    docker compose up $args | Out-Host
+    Invoke-NativeNoStop { docker compose up @composeArgs 2>&1 | Out-Host }
     if ($LASTEXITCODE -ne 0) { throw "docker compose up failed after conflict cleanup ($LASTEXITCODE)" }
     return
   }
@@ -116,7 +136,7 @@ function ComposeUp([string]$args = "-d --build") {
 
 function PrintComposePs() {
   try {
-    docker compose ps | Out-Host
+    Invoke-NativeNoStop { docker compose ps | Out-Host }
   } catch {
     # best-effort
   }
@@ -124,7 +144,7 @@ function PrintComposePs() {
 
 function GetApiLogs() {
   try {
-    $logs = (docker compose logs --no-color --tail 2000 api 2>$null | Out-String)
+    $logs = (Invoke-NativeNoStop { docker compose logs --no-color --tail 2000 api 2>$null | Out-String })
     if ($DebugLogs) {
       $outPath = Join-Path $PSScriptRoot ".smoke_logs_api.txt"
       Set-Content -Path $outPath -Value $logs -Encoding utf8
@@ -161,7 +181,7 @@ function TryParseSmsCodeFromLogs([string]$logs, [string]$phone) {
 function TryGetSmsCodeFromRedis([string]$phone) {
   try {
     $key = "sms:code:$phone"
-    $raw = (docker exec secp-redis redis-cli get $key 2>$null | Out-String)
+    $raw = (Invoke-NativeNoStop { docker exec secp-redis redis-cli get $key 2>$null | Out-String })
     if ([string]::IsNullOrWhiteSpace($raw)) {
       return $null
     }
@@ -185,7 +205,7 @@ function ResetSmsLimitsInRedis([string]$phone) {
     $dailyKey = "sms:daily:${phone}:$today"
     $cooldownKey = "sms:cooldown:${phone}"
     $codeKey = "sms:code:${phone}"
-    docker exec secp-redis redis-cli del $dailyKey $cooldownKey $codeKey 2>$null | Out-Host
+    Invoke-NativeNoStop { docker exec secp-redis redis-cli del $dailyKey $cooldownKey $codeKey 2>$null | Out-Host }
   } catch {
     # best-effort
   }
@@ -392,9 +412,9 @@ function AssertZoneDashboard([string]$internalToken) {
 }
 
 try {
-  $composeUpArgs = "-d"
+  $composeUpArgs = @('-d')
   if ($BuildImages) {
-    $composeUpArgs = "-d --build"
+    $composeUpArgs = @('-d', '--build')
   }
 
   ExecStep "Preflight: .env" { EnsureEnvFile }

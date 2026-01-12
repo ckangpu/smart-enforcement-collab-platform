@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>项目详情 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="nav">
+    <a href="/ui/projects.html" data-i18n-key="common.projects">我的项目</a>
+    <a href="/ui/tasks.html" data-i18n-key="common.tasks">我的任务</a>
+    <div class="spacer"></div>
+    <button id="logoutBtn" class="secondary" data-i18n-key="common.logout">退出登录</button>
+  </div>
+
+  <div class="container">
+    <h1 data-i18n-key="projectDetail.title">项目详情</h1>
+
+    <div class="actions">
+      <button id="exportBtn" data-i18n-key="projectDetail.export">导出 A4 PDF（下载）</button>
+      <button id="openBtn" class="secondary" data-i18n-key="projectDetail.openPdf">在新标签页打开 PDF</button>
+      <span id="exportStatus" class="note"></span>
+    </div>
+
+    <div id="error" class="alert" style="display:none"></div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.base">1) 项目基础信息</h2>
+      <div class="card" id="projectBox"></div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.members">2) 成员</h2>
+      <div class="card">
+        <div class="note" data-i18n-key="projectDetail.members.project">项目成员</div>
+        <table class="table" id="pmTbl"><thead><tr><th data-i18n-key="table.userId">用户ID</th><th data-i18n-key="table.role">角色</th><th data-i18n-key="table.username">用户名</th><th data-i18n-key="table.phone">手机号</th></tr></thead><tbody></tbody></table>
+        <div style="height: 10px"></div>
+        <div class="note" data-i18n-key="projectDetail.members.case">案件成员</div>
+        <table class="table" id="cmTbl"><thead><tr><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.userId">用户ID</th><th data-i18n-key="table.role">角色</th><th data-i18n-key="table.username">用户名</th><th data-i18n-key="table.phone">手机号</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.cases">3) 案件列表</h2>
+      <div class="card">
+        <table class="table" id="casesTbl"><thead><tr><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.caseTitle">案件标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.createdAt">创建时间</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.tasks">4) 任务列表</h2>
+      <div class="card">
+        <table class="table" id="tasksTbl"><thead><tr><th data-i18n-key="table.taskId">任务ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.priority">优先级</th><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.instructionItemId">指令项ID</th><th data-i18n-key="tasks.table.dueAt">截止时间</th><th data-i18n-key="table.assigneeUserId">负责人用户ID</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.instructions">5) 指令汇总</h2>
+      <div class="card">
+        <table class="table" id="insTbl"><thead><tr><th data-i18n-key="table.instructionId">指令ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.version">版本</th><th data-i18n-key="table.deadline">截止时间</th><th data-i18n-key="table.issuedAt">下发时间</th><th data-i18n-key="table.itemTotal">总项数</th><th data-i18n-key="table.itemDone">已完成项数</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.payments">6) 回款汇总</h2>
+      <div class="card" id="payBox"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, clearToken, apiFetch, authHeader, formatDate, maskPhone, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $('error');
+    const exportStatus = $('exportStatus');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function logout() {
+      clearToken();
+      window.location.replace('/ui/login.html?reason=logout');
+    }
+
+    $('logoutBtn').addEventListener('click', logout);
+
+    const projectId = new URLSearchParams(window.location.search).get('projectId');
+    if (!projectId) {
+      showError(t('projectDetail.missingProjectId'));
+    }
+
+    function esc(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function kvTable(obj) {
+      if (!obj || typeof obj !== 'object') return `<div class="note">${esc(t('common.empty'))}</div>`;
+      const rows = Object.entries(obj).map(([k, v]) => {
+        const vv = (k.toLowerCase().includes('at')) ? formatDate(v) : v;
+        return `<tr><th>${esc(k)}</th><td>${esc(vv)}</td></tr>`;
+      }).join('');
+      return `<table class="table"><tbody>${rows}</tbody></table>`;
+    }
+
+    function fillTable(tbodyEl, rows, cols) {
+      tbodyEl.innerHTML = '';
+
+      if (!rows || rows.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="${cols.length}" class="note">${esc(t('common.empty'))}</td>`;
+        tbodyEl.appendChild(tr);
+        return;
+      }
+
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = cols.map(c => `<td>${esc(c(r))}</td>`).join('');
+        tbodyEl.appendChild(tr);
+      }
+    }
+
+    async function loadDetail() {
+      if (!projectId) return;
+      showError('');
+
+      let res;
+      try {
+        res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/detail`, { method: 'GET' });
+      } catch {
+        return;
+      }
+
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        showError(`加载失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        return;
+      }
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        showError(`${t('common.responseNotJson')}：${text}`, text);
+        return;
+      }
+
+      $('projectBox').innerHTML = kvTable(json.project);
+
+      const pms = json?.members?.projectMembers ?? [];
+      fillTable($('pmTbl').querySelector('tbody'), pms, [
+        (m) => m.userId,
+        (m) => m.role,
+        (m) => m.username,
+        (m) => maskPhone(m.phoneMasked ?? m.phone)
+      ]);
+
+      const cms = json?.members?.caseMembers ?? [];
+      fillTable($('cmTbl').querySelector('tbody'), cms, [
+        (m) => m.caseId,
+        (m) => m.userId,
+        (m) => m.role,
+        (m) => m.username,
+        (m) => maskPhone(m.phoneMasked ?? m.phone)
+      ]);
+
+      const cases = json?.cases ?? [];
+      fillTable($('casesTbl').querySelector('tbody'), cases, [
+        (c) => c.caseId,
+        (c) => c.title,
+        (c) => c.status,
+        (c) => formatDate(c.createdAt)
+      ]);
+
+      const tasks = json?.tasks ?? [];
+      fillTable($('tasksTbl').querySelector('tbody'), tasks, [
+        (t) => t.taskId,
+        (t) => t.title,
+        (t) => t.status,
+        (t) => t.priority,
+        (t) => t.caseId,
+        (t) => t.instructionItemId,
+        (t) => formatDate(t.dueAt),
+        (t) => t.assigneeUserId
+      ]);
+
+      const ins = json?.instructions ?? [];
+      fillTable($('insTbl').querySelector('tbody'), ins, [
+        (i) => i.instructionId,
+        (i) => i.title,
+        (i) => i.status,
+        (i) => i.version,
+        (i) => formatDate(i.deadline),
+        (i) => formatDate(i.issuedAt),
+        (i) => i.itemTotal,
+        (i) => i.itemDone
+      ]);
+
+      $('payBox').innerHTML = kvTable(json.payments);
+    }
+
+    async function fetchPdfBlob() {
+      if (!projectId) {
+        showError(t('projectDetail.missingProjectId'));
+        return null;
+      }
+
+      exportStatus.textContent = t('projectDetail.exporting');
+      showError('');
+
+      let res;
+      try {
+        res = await fetch(`/projects/${encodeURIComponent(projectId)}/a4.pdf`, {
+          method: 'GET',
+          headers: authHeader()
+        });
+      } catch (e) {
+        exportStatus.textContent = '';
+        showError(`${t('common.requestFailed')}：${e?.message || e}`);
+        return null;
+      }
+
+      if (res.status === 401) {
+        clearToken();
+        window.location.replace('/ui/login.html?reason=unauthorized&message=' + encodeURIComponent(t('error.unauthorized')));
+        return null;
+      }
+      if (res.status === 403) {
+        window.location.replace('/ui/login.html?reason=forbidden&message=' + encodeURIComponent(t('error.forbiddenInternalOnly')));
+        return null;
+      }
+
+      if (!res.ok) {
+        const t = await res.text();
+        exportStatus.textContent = '';
+        const err = parseErrorBodyText(t);
+        showError(`导出失败（HTTP ${res.status}）：${err.message || t}`, err.debug || t);
+        return null;
+      }
+
+      const blob = await res.blob();
+      exportStatus.textContent = '';
+      return blob;
+    }
+
+    async function downloadPdf() {
+      const blob = await fetchPdfBlob();
+      if (!blob) return;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `项目_${projectId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    async function openPdf() {
+      const blob = await fetchPdfBlob();
+      if (!blob) return;
+
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
+
+    $('exportBtn').addEventListener('click', downloadPdf);
+    $('openBtn').addEventListener('click', openPdf);
+
+    await initUiI18n();
+    applyI18n(document);
+    loadDetail();
+  </script>
+</body>
+</html>
