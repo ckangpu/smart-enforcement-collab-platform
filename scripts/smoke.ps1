@@ -2,7 +2,16 @@ param(
   [string]$BaseUrl = "http://localhost:8080",
   [int]$HealthTimeoutSeconds = 120,
   [switch]$NoAutoCopyEnv,
-  [switch]$DebugLogs
+  [switch]$DebugLogs,
+
+  # Compose behavior:
+  # - Default: `docker compose up -d` (recommended)
+  # - Only when explicitly passing -BuildImages: `docker compose up -d --build`
+  [switch]$BuildImages,
+
+  # Recommended for local debugging: reuse already-running compose services.
+  # When set, the script will NOT run `docker compose up`.
+  [switch]$SkipCompose
 )
 
 $ErrorActionPreference = "Stop"
@@ -76,6 +85,43 @@ function ResetComposeState() {
   if ($LASTEXITCODE -ne 0) { throw "docker compose down -v failed ($LASTEXITCODE)" }
 }
 
+function ComposeUp([string]$args = "-d --build") {
+  # IMPORTANT: stream output line-by-line so users don't think it's "hung",
+  # and so callers can capture full logs with Tee-Object.
+  $outLines = @()
+  docker compose up $args 2>&1 | Tee-Object -Variable outLines | Out-Host
+  if ($LASTEXITCODE -eq 0) {
+    return
+  }
+
+  $out = ($outLines | Out-String)
+
+  # Handle common local-dev flake: a leftover container with the same name blocks compose.
+  # Example: The container name "/a91e703bcd33_secp-worker" is already in use by container "..."
+  $rx = [regex]::new('The container name\s+"/?([^\"]+)"\s+is already in use', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  $m = $rx.Match($out)
+  if ($m.Success) {
+    $conflictName = $m.Groups[1].Value
+    Write-Warning "docker compose up failed due to name conflict: $conflictName. Will remove and retry once."
+    docker rm -f $conflictName | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "docker rm -f $conflictName failed ($LASTEXITCODE)" }
+
+    docker compose up $args | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "docker compose up failed after conflict cleanup ($LASTEXITCODE)" }
+    return
+  }
+
+  throw "docker compose up failed ($LASTEXITCODE)"
+}
+
+function PrintComposePs() {
+  try {
+    docker compose ps | Out-Host
+  } catch {
+    # best-effort
+  }
+}
+
 function GetApiLogs() {
   try {
     $logs = (docker compose logs --no-color --tail 2000 api 2>$null | Out-String)
@@ -132,17 +178,31 @@ function TryGetSmsCodeFromRedis([string]$phone) {
   }
 }
 
+function ResetSmsLimitsInRedis([string]$phone) {
+  try {
+    # DEV ONLY: allow smoke to be re-run without being blocked by SMS cooldown/daily limit.
+    $today = (Get-Date).ToString('yyyy-MM-dd')
+    $dailyKey = "sms:daily:${phone}:$today"
+    $cooldownKey = "sms:cooldown:${phone}"
+    $codeKey = "sms:code:${phone}"
+    docker exec secp-redis redis-cli del $dailyKey $cooldownKey $codeKey 2>$null | Out-Host
+  } catch {
+    # best-effort
+  }
+}
+
 function GetSmsCode([string]$phone) {
+  # Prefer Redis (source of truth for current code) to avoid picking up stale codes from logs.
+  $code = TryGetSmsCodeFromRedis -phone $phone
+  if ($null -ne $code -and $code -ne "") {
+    Write-Host "Read SMS code for $phone from redis."
+    return $code
+  }
+
   $logs = GetApiLogs
   $code = TryParseSmsCodeFromLogs -logs $logs -phone $phone
   if ($null -ne $code -and $code -ne "") {
     Write-Host "Parsed SMS code for $phone from api logs."
-    return $code
-  }
-
-  $code = TryGetSmsCodeFromRedis -phone $phone
-  if ($null -ne $code -and $code -ne "") {
-    Write-Host "Read SMS code for $phone from redis."
     return $code
   }
 
@@ -248,28 +308,52 @@ function HttpGet([string]$url, [hashtable]$headers = @{}) {
 }
 
 function GetJwtForPhone([string]$phone) {
-  $sendBody = ('{{"phone":"{0}"}}' -f $phone)
-  [void](HttpPostJson -url "$BaseUrl/auth/sms/send" -jsonBody $sendBody)
+  # Prefer existing code in Redis (useful for -SkipCompose and repeated runs).
+  $code = TryGetSmsCodeFromRedis -phone $phone
+  if ($null -ne $code -and $code -ne "") {
+    Write-Host "Using existing SMS code for $phone from redis."
+  } else {
+    $sendBody = ('{{"phone":"{0}"}}' -f $phone)
+    $sendResp = HttpPostJsonWithStatus -url "$BaseUrl/auth/sms/send" -jsonBody $sendBody
+    if ($sendResp.status -ne 200) {
+      Write-Warning "POST /auth/sms/send returned $($sendResp.status) for $phone. Body: $($sendResp.body)"
 
-  # Give logs a moment to flush.
-  Start-Sleep -Milliseconds 300
+      if ($sendResp.status -eq 429 -and ($sendResp.body -match 'SMS_DAILY_LIMIT' -or $sendResp.body -match 'SMS_COOLDOWN')) {
+        Write-Warning "DEV ONLY: resetting SMS redis keys for $phone and retrying once."
+        ResetSmsLimitsInRedis -phone $phone
+        $sendResp = HttpPostJsonWithStatus -url "$BaseUrl/auth/sms/send" -jsonBody $sendBody
+        if ($sendResp.status -ne 200) {
+          Write-Warning "Retry POST /auth/sms/send returned $($sendResp.status) for $phone. Body: $($sendResp.body)"
+        }
+      }
+    }
 
-  $code = GetSmsCode -phone $phone
+    # Give Redis/logs a moment to flush.
+    Start-Sleep -Milliseconds 300
+    $code = TryGetSmsCodeFromRedis -phone $phone
+  }
+
+  if ([string]::IsNullOrWhiteSpace($code)) {
+    $code = GetSmsCode -phone $phone
+  }
   if ([string]::IsNullOrWhiteSpace($code)) {
     Fail "Empty SMS code for $phone"
   }
 
   $verifyBody = ('{{"phone":"{0}","code":"{1}"}}' -f $phone, $code)
-  $verifyResp = HttpPostJson -url "$BaseUrl/auth/sms/verify" -jsonBody $verifyBody
+  $verifyResp = HttpPostJsonWithStatus -url "$BaseUrl/auth/sms/verify" -jsonBody $verifyBody
+  if ($verifyResp.status -ne 200) {
+    Fail "POST /auth/sms/verify expected 200, got $($verifyResp.status) for $phone. Body: $($verifyResp.body)"
+  }
 
   try {
-    $json = $verifyResp | ConvertFrom-Json
+    $json = $verifyResp.body | ConvertFrom-Json
   } catch {
-    Fail "Failed to parse /auth/sms/verify response as JSON for $phone. Raw: $verifyResp"
+    Fail "Failed to parse /auth/sms/verify response as JSON for $phone. Raw: $($verifyResp.body)"
   }
 
   if ($null -eq $json.token -or [string]::IsNullOrWhiteSpace($json.token)) {
-    Fail "No token in /auth/sms/verify response for $phone. Raw: $verifyResp"
+    Fail "No token in /auth/sms/verify response for $phone. Raw: $($verifyResp.body)"
   }
 
   return $json.token
@@ -308,11 +392,22 @@ function AssertZoneDashboard([string]$internalToken) {
 }
 
 try {
+  $composeUpArgs = "-d"
+  if ($BuildImages) {
+    $composeUpArgs = "-d --build"
+  }
+
   ExecStep "Preflight: .env" { EnsureEnvFile }
 
-  ExecStep "docker compose up -d --build" {
-    docker compose up -d --build | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "docker compose up failed ($LASTEXITCODE)" }
+  if ($SkipCompose) {
+    ExecStep "Compose: skipped (buildImages=$BuildImages)..." {
+      PrintComposePs
+    }
+  } else {
+    ExecStep "Compose: starting (buildImages=$BuildImages)..." {
+      ComposeUp $composeUpArgs
+      PrintComposePs
+    }
   }
 
   ExecStep "Wait /health (max ${HealthTimeoutSeconds}s)" {
@@ -328,8 +423,10 @@ try {
         if (IsFlywayChecksumMismatch -logs $logs) {
           Write-Warning "API did not become healthy; detected Flyway validation/checksum mismatch. Will reset volumes and retry once."
           ResetComposeState
-          docker compose up -d --build | Out-Host
-          if ($LASTEXITCODE -ne 0) { throw "docker compose up failed ($LASTEXITCODE)" }
+          if (-not $SkipCompose) {
+            ComposeUp $composeUpArgs
+            PrintComposePs
+          }
           $retried = $true
           continue
         }
@@ -443,6 +540,34 @@ try {
   ExecStep "Assert /reports/zone-dashboard" {
     AssertZoneDashboard -internalToken $script:InternalToken
     Write-Host "Zone dashboard OK."
+  }
+
+  ExecStep "Project: GET /projects/{id}/detail" {
+    $dr = HttpGetWithStatus -url "$BaseUrl/projects/$($script:ProjectId)/detail" -headers @{ Authorization = "Bearer $script:InternalToken" }
+    if ($dr.status -ne 200) {
+      Fail "GET /projects/{id}/detail expected 200, got $($dr.status). Body: $($dr.body)"
+    }
+  }
+
+  ExecStep "Project: GET /projects/{id}/a4.pdf (pdf headers)" {
+    $tmpDir = Join-Path $PSScriptRoot ".smoke_tmp"
+    New-Item -ItemType Directory -Force $tmpDir | Out-Null
+    $hdrPath = Join-Path $tmpDir "project_a4_headers.txt"
+    $pdfPath = Join-Path $tmpDir "project_a4.pdf"
+
+    $status = & curl.exe -sS -D $hdrPath -o $pdfPath -H "Authorization: Bearer $script:InternalToken" -w "%{http_code}" "$BaseUrl/projects/$($script:ProjectId)/a4.pdf"
+    if ([int]$status -ne 200) {
+      $hdr = ""
+      if (Test-Path $hdrPath) { $hdr = Get-Content $hdrPath -Raw }
+      Fail "GET /projects/{id}/a4.pdf expected 200, got $status. Headers: $hdr"
+    }
+
+    $hdr = Get-Content $hdrPath -Raw
+    $lines = $hdr -split "`r?`n"
+    $ctLine = $lines | Where-Object { $_ -like 'Content-Type:*' } | Select-Object -First 1
+    if ($null -eq $ctLine -or $ctLine.ToLowerInvariant() -notlike '*application/pdf*') {
+      Fail "Expected Content-Type application/pdf. Headers: $hdr"
+    }
   }
 
   Write-Host "\nSMOKE PASS"
