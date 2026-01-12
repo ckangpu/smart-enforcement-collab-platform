@@ -71,6 +71,25 @@ public class WorkbenchProjectController {
     return ResponseEntity.ok(service.createCreditor(principal, projectId, req, httpReq));
   }
 
+  @PutMapping("/projects/{projectId}/creditors/{creditorId}")
+  public ResponseEntity<Void> updateCreditor(@PathVariable UUID projectId,
+                                             @PathVariable UUID creditorId,
+                                             @Valid @RequestBody UpdateCreditorRequest req,
+                                             HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.updateCreditor(principal, projectId, creditorId, req, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/projects/{projectId}/creditors/{creditorId}")
+  public ResponseEntity<Void> deleteCreditor(@PathVariable UUID projectId,
+                                             @PathVariable UUID creditorId,
+                                             HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.deleteCreditor(principal, projectId, creditorId, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
   @PutMapping("/creditors/{creditorId}")
   public ResponseEntity<Void> updateCreditor(@PathVariable UUID creditorId,
                                              @Valid @RequestBody UpdateCreditorRequest req,
@@ -94,6 +113,25 @@ public class WorkbenchProjectController {
                                                  HttpServletRequest httpReq) {
     AuthPrincipal principal = AuthContext.getRequired();
     return ResponseEntity.ok(service.createDebtor(principal, projectId, req, httpReq));
+  }
+
+  @PutMapping("/projects/{projectId}/debtors/{debtorId}")
+  public ResponseEntity<Void> updateDebtor(@PathVariable UUID projectId,
+                                           @PathVariable UUID debtorId,
+                                           @Valid @RequestBody UpdateDebtorRequest req,
+                                           HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.updateDebtor(principal, projectId, debtorId, req, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/projects/{projectId}/debtors/{debtorId}")
+  public ResponseEntity<Void> deleteDebtor(@PathVariable UUID projectId,
+                                           @PathVariable UUID debtorId,
+                                           HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.deleteDebtor(principal, projectId, debtorId, httpReq);
+    return ResponseEntity.ok().build();
   }
 
   @PutMapping("/debtors/{debtorId}")
@@ -127,6 +165,25 @@ public class WorkbenchProjectController {
     return ResponseEntity.ok(service.createClue(principal, debtorId, req, httpReq));
   }
 
+  @PutMapping("/debtors/{debtorId}/clues/{clueId}")
+  public ResponseEntity<Void> updateClueInDebtor(@PathVariable UUID debtorId,
+                                                 @PathVariable UUID clueId,
+                                                 @Valid @RequestBody UpdateClueRequest req,
+                                                 HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.updateClue(principal, debtorId, clueId, req, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/debtors/{debtorId}/clues/{clueId}")
+  public ResponseEntity<Void> deleteClueInDebtor(@PathVariable UUID debtorId,
+                                                 @PathVariable UUID clueId,
+                                                 HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.deleteClue(principal, debtorId, clueId, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
   @PutMapping("/clues/{clueId}")
   public ResponseEntity<Void> updateClue(@PathVariable UUID clueId,
                                          @Valid @RequestBody UpdateClueRequest req,
@@ -150,6 +207,25 @@ public class WorkbenchProjectController {
                                          HttpServletRequest httpReq) {
     AuthPrincipal principal = AuthContext.getRequired();
     service.updateCase(principal, caseId, req, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
+  @PutMapping("/projects/{projectId}/cases/{caseId}")
+  public ResponseEntity<Void> updateCaseInProject(@PathVariable UUID projectId,
+                                                  @PathVariable UUID caseId,
+                                                  @Valid @RequestBody UpdateWorkbenchCaseRequest req,
+                                                  HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.updateCase(principal, projectId, caseId, req, httpReq);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/projects/{projectId}/cases/{caseId}")
+  public ResponseEntity<Void> deleteCaseInProject(@PathVariable UUID projectId,
+                                                  @PathVariable UUID caseId,
+                                                  HttpServletRequest httpReq) {
+    AuthPrincipal principal = AuthContext.getRequired();
+    service.deleteCase(principal, projectId, caseId, httpReq);
     return ResponseEntity.ok().build();
   }
 

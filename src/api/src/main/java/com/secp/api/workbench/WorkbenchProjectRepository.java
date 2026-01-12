@@ -549,6 +549,10 @@ public class WorkbenchProjectRepository {
     );
   }
 
+  public void deleteCase(UUID caseId) {
+    jdbc.update("delete from \"case\" where id=?", caseId);
+  }
+
   public void insertWorkbenchCase(UUID caseId,
                                  UUID groupId,
                                  UUID projectId,

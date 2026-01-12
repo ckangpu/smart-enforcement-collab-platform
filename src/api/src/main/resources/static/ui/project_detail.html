@@ -125,6 +125,7 @@
                 <th data-i18n-key="workbench.basisDocType">执行依据类型</th>
                 <th data-i18n-key="workbench.basisDocNo">文书号</th>
                 <th data-i18n-key="workbench.basisDecidedAt">作出时间</th>
+                <th data-i18n-key="common.operation">操作</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -789,7 +790,7 @@
       const rows = wb.cases || [];
       if (!rows || rows.length === 0) {
         const trEl = document.createElement('tr');
-        trEl.innerHTML = `<td colspan="7" class="note">${esc(t('common.empty'))}</td>`;
+        trEl.innerHTML = `<td colspan="8" class="note">${esc(t('common.empty'))}</td>`;
         tbody.appendChild(trEl);
         return;
       }
@@ -804,6 +805,10 @@
           <td>${esc(c.basisDocType ?? '')}</td>
           <td>${esc(c.basisDocNo ?? '')}</td>
           <td>${esc(safeDate(c.basisDecidedAt) || '')}</td>
+          <td>
+            <button class="secondary" data-act="editCase" data-id="${esc(caseId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delCase" data-id="${esc(caseId)}">${esc(t('common.delete'))}</button>
+          </td>
         `;
         tbody.appendChild(trEl);
       }
@@ -1715,7 +1720,7 @@
         if (!v) return;
         setMsg('creditorMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/creditors/${encodeURIComponent(id)}`, {
+          const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/creditors/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(v)
@@ -1738,7 +1743,7 @@
         if (!(await confirmDelete())) return;
         setMsg('creditorMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/creditors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/creditors/${encodeURIComponent(id)}`, { method: 'DELETE' });
           const text = await res.text();
           if (!res.ok) {
             const err = parseErrorBodyText(text);
@@ -1760,7 +1765,7 @@
         if (!v) return;
         setMsg('debtorMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(id)}`, {
+          const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/debtors/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(v)
@@ -1783,7 +1788,7 @@
         if (!(await confirmDelete())) return;
         setMsg('debtorMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/debtors/${encodeURIComponent(id)}`, { method: 'DELETE' });
           const text = await res.text();
           if (!res.ok) {
             const err = parseErrorBodyText(text);
@@ -1811,7 +1816,7 @@
         if (!v) return;
         setMsg('clueMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/clues/${encodeURIComponent(id)}`, {
+          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(debtorId)}/clues/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ category: v.category, detail: v.detail, source: v.source, collectedAt: v.collectedAt })
@@ -1834,13 +1839,81 @@
         if (!(await confirmDelete())) return;
         setMsg('clueMsg', t('common.saving'));
         try {
-          const res = await apiFetch(`/workbench/clues/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(debtorId)}/clues/${encodeURIComponent(id)}`, { method: 'DELETE' });
           const text = await res.text();
           if (!res.ok) {
             const err = parseErrorBodyText(text);
             setMsg('clueMsg', `删除失败：${err.message || text}`);
             return;
           }
+                if (act === 'editCase') {
+                  const c = (wb.cases || []).find(x => String(x.caseId) === String(id));
+                  if (!c) return;
+
+                  const creditorOptions = (wb.creditors || []).map(c1 => ({ value: c1.creditorId, label: `${c1.srCode || ''} ${c1.name || ''}`.trim() }));
+                  const debtorOptions = (wb.debtors || []).map(d1 => ({ value: d1.debtorId, label: `${d1.brCode || ''} ${d1.name || ''}`.trim() }));
+                  const fields = [
+                    { key: 'creditorId', label: t('projectDetail.workbench.bindCreditor'), type: 'select', required: true, options: creditorOptions },
+                    { key: 'debtorId', label: t('projectDetail.workbench.bindDebtor'), type: 'select', required: true, options: debtorOptions },
+                    { key: 'cause', label: t('workbench.cause'), type: 'text', required: true },
+                    { key: 'basisDocType', label: t('workbench.basisDocType'), type: 'text', required: false },
+                    { key: 'basisDocNo', label: t('workbench.basisDocNo'), type: 'text', required: false },
+                    { key: 'basisOrg', label: t('workbench.basisOrg'), type: 'text', required: false },
+                    { key: 'basisDecidedAt', label: t('workbench.basisDecidedAt'), type: 'date', required: false },
+                    { key: 'basisMainText', label: t('workbench.basisMainText'), type: 'text', required: false }
+                  ];
+
+                  const v = await openFormDialog(t('common.edit'), fields, {
+                    creditorId: c.creditorId || '',
+                    debtorId: c.debtorId || '',
+                    cause: c.cause || '',
+                    basisDocType: c.basisDocType || '',
+                    basisDocNo: c.basisDocNo || '',
+                    basisOrg: c.basisOrg || '',
+                    basisDecidedAt: safeDate(c.basisDecidedAt) || '',
+                    basisMainText: c.basisMainText || ''
+                  });
+                  if (!v) return;
+
+                  setMsg('caseMsg', t('common.saving'));
+                  try {
+                    const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/cases/${encodeURIComponent(id)}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(v)
+                    });
+                    const text = await res.text();
+                    if (!res.ok) {
+                      const err = parseErrorBodyText(text);
+                      setMsg('caseMsg', `保存失败：${err.message || text}`);
+                      return;
+                    }
+                    setMsg('caseMsg', t('common.saved'));
+                    await loadWorkbenchDetail();
+                  } catch (e) {
+                    setMsg('caseMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+                  }
+                  return;
+                }
+
+                if (act === 'delCase') {
+                  if (!(await confirmDelete())) return;
+                  setMsg('caseMsg', t('common.saving'));
+                  try {
+                    const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/cases/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                    const text = await res.text();
+                    if (!res.ok) {
+                      const err = parseErrorBodyText(text);
+                      setMsg('caseMsg', `删除失败：${err.message || text}`);
+                      return;
+                    }
+                    setMsg('caseMsg', t('common.saved'));
+                    await loadWorkbenchDetail();
+                  } catch (e) {
+                    setMsg('caseMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+                  }
+                  return;
+                }
           setMsg('clueMsg', t('common.saved'));
           await reloadClues(debtorId);
         } catch (e) {

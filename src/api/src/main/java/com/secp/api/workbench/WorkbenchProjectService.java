@@ -10,6 +10,7 @@ import com.secp.api.workbench.dto.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -169,36 +170,54 @@ public class WorkbenchProjectService {
   }
 
   public void updateCreditor(AuthPrincipal principal, UUID creditorId, UpdateCreditorRequest req, HttpServletRequest httpReq) {
+    updateCreditor(principal, null, creditorId, req, httpReq);
+  }
+
+  public void updateCreditor(AuthPrincipal principal, UUID projectId, UUID creditorId, UpdateCreditorRequest req, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findCreditorBase(creditorId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID projectId = (UUID) row.get("project_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
       repo.updateCreditor(creditorId, req);
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.CreditorUpdated", "project_creditor", creditorId,
-          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", projectId)));
-      writeOutbox(groupId, projectId, null, principal.userId(), "Creditor.Updated",
+      writeAudit(httpReq, principal.userId(), groupId, "creditor_update", "project_creditor", creditorId,
+          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, null, principal.userId(), "Creditor.Updated",
           "Creditor.Updated:project_creditor:" + creditorId + ":v1",
-          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", projectId)));
+          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", actualProjectId)));
     });
   }
 
   public void deleteCreditor(AuthPrincipal principal, UUID creditorId, HttpServletRequest httpReq) {
+    deleteCreditor(principal, null, creditorId, httpReq);
+  }
+
+  public void deleteCreditor(AuthPrincipal principal, UUID projectId, UUID creditorId, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findCreditorBase(creditorId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID projectId = (UUID) row.get("project_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
-      repo.deleteCreditor(creditorId);
+      try {
+        repo.deleteCreditor(creditorId);
+      } catch (DataIntegrityViolationException e) {
+        throw new WorkbenchValidationException("该记录存在关联数据，无法删除。", 409);
+      }
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.CreditorDeleted", "project_creditor", creditorId,
-          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", projectId)));
-      writeOutbox(groupId, projectId, null, principal.userId(), "Creditor.Deleted",
+      writeAudit(httpReq, principal.userId(), groupId, "creditor_delete", "project_creditor", creditorId,
+          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, null, principal.userId(), "Creditor.Deleted",
           "Creditor.Deleted:project_creditor:" + creditorId + ":v1",
-          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", projectId)));
+          responseJson.toJson(Map.of("creditorId", creditorId, "projectId", actualProjectId)));
     });
   }
 
@@ -238,36 +257,54 @@ public class WorkbenchProjectService {
   }
 
   public void updateDebtor(AuthPrincipal principal, UUID debtorId, UpdateDebtorRequest req, HttpServletRequest httpReq) {
+    updateDebtor(principal, null, debtorId, req, httpReq);
+  }
+
+  public void updateDebtor(AuthPrincipal principal, UUID projectId, UUID debtorId, UpdateDebtorRequest req, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findDebtorBase(debtorId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID projectId = (UUID) row.get("project_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
       repo.updateDebtor(debtorId, req);
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.DebtorUpdated", "project_debtor", debtorId,
-          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", projectId)));
-      writeOutbox(groupId, projectId, null, principal.userId(), "Debtor.Updated",
+      writeAudit(httpReq, principal.userId(), groupId, "debtor_update", "project_debtor", debtorId,
+          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, null, principal.userId(), "Debtor.Updated",
           "Debtor.Updated:project_debtor:" + debtorId + ":v1",
-          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", projectId)));
+          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", actualProjectId)));
     });
   }
 
   public void deleteDebtor(AuthPrincipal principal, UUID debtorId, HttpServletRequest httpReq) {
+    deleteDebtor(principal, null, debtorId, httpReq);
+  }
+
+  public void deleteDebtor(AuthPrincipal principal, UUID projectId, UUID debtorId, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findDebtorBase(debtorId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID projectId = (UUID) row.get("project_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
-      repo.deleteDebtor(debtorId);
+      try {
+        repo.deleteDebtor(debtorId);
+      } catch (DataIntegrityViolationException e) {
+        throw new WorkbenchValidationException("该记录存在关联数据，无法删除。", 409);
+      }
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.DebtorDeleted", "project_debtor", debtorId,
-          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", projectId)));
-      writeOutbox(groupId, projectId, null, principal.userId(), "Debtor.Deleted",
+      writeAudit(httpReq, principal.userId(), groupId, "debtor_delete", "project_debtor", debtorId,
+          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, null, principal.userId(), "Debtor.Deleted",
           "Debtor.Deleted:project_debtor:" + debtorId + ":v1",
-          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", projectId)));
+          responseJson.toJson(Map.of("debtorId", debtorId, "projectId", actualProjectId)));
     });
   }
 
@@ -304,32 +341,51 @@ public class WorkbenchProjectService {
   }
 
   public void updateClue(AuthPrincipal principal, UUID clueId, UpdateClueRequest req, HttpServletRequest httpReq) {
+    updateClue(principal, null, clueId, req, httpReq);
+  }
+
+  public void updateClue(AuthPrincipal principal, UUID debtorId, UUID clueId, UpdateClueRequest req, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findClueBase(clueId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID debtorId = (UUID) row.get("debtor_id");
+      UUID actualDebtorId = (UUID) row.get("debtor_id");
       UUID projectId = (UUID) row.get("project_id");
+      if (debtorId != null && !debtorId.equals(actualDebtorId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
       repo.updateClue(clueId, req);
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.ClueUpdated", "debtor_clue", clueId,
-          responseJson.toJson(Map.of("clueId", clueId, "projectId", projectId, "debtorId", debtorId)));
+      writeAudit(httpReq, principal.userId(), groupId, "clue_update", "debtor_clue", clueId,
+          responseJson.toJson(Map.of("clueId", clueId, "projectId", projectId, "debtorId", actualDebtorId)));
       writeOutbox(groupId, projectId, null, principal.userId(), "Clue.Updated",
           "Clue.Updated:debtor_clue:" + clueId + ":v1",
-          responseJson.toJson(Map.of("clueId", clueId, "projectId", projectId, "debtorId", debtorId)));
+          responseJson.toJson(Map.of("clueId", clueId, "projectId", projectId, "debtorId", actualDebtorId)));
     });
   }
 
   public void deleteClue(AuthPrincipal principal, UUID clueId, HttpServletRequest httpReq) {
+    deleteClue(principal, null, clueId, httpReq);
+  }
+
+  public void deleteClue(AuthPrincipal principal, UUID debtorId, UUID clueId, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findClueBase(clueId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
       UUID projectId = (UUID) row.get("project_id");
+      UUID actualDebtorId = (UUID) row.get("debtor_id");
+      if (debtorId != null && !debtorId.equals(actualDebtorId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
-      repo.deleteClue(clueId);
+      try {
+        repo.deleteClue(clueId);
+      } catch (DataIntegrityViolationException e) {
+        throw new WorkbenchValidationException("该记录存在关联数据，无法删除。", 409);
+      }
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.ClueDeleted", "debtor_clue", clueId,
+      writeAudit(httpReq, principal.userId(), groupId, "clue_delete", "debtor_clue", clueId,
           responseJson.toJson(Map.of("clueId", clueId, "projectId", projectId)));
       writeOutbox(groupId, projectId, null, principal.userId(), "Clue.Deleted",
           "Clue.Deleted:debtor_clue:" + clueId + ":v1",
@@ -338,26 +394,57 @@ public class WorkbenchProjectService {
   }
 
   public void updateCase(AuthPrincipal principal, UUID caseId, UpdateWorkbenchCaseRequest req, HttpServletRequest httpReq) {
+    updateCase(principal, null, caseId, req, httpReq);
+  }
+
+  public void updateCase(AuthPrincipal principal, UUID projectId, UUID caseId, UpdateWorkbenchCaseRequest req, HttpServletRequest httpReq) {
     tx.run(principal, () -> {
       var row = repo.findCaseBase(caseId).orElseThrow(ProjectNotFoundException::new);
       UUID groupId = (UUID) row.get("group_id");
-      UUID projectId = (UUID) row.get("project_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
       assertCanWriteGroup(groupId);
 
-      if (req.creditorId() != null && !repo.creditorBelongsToProject(req.creditorId(), projectId)) {
+      if (req.creditorId() != null && !repo.creditorBelongsToProject(req.creditorId(), actualProjectId)) {
         throw new WorkbenchValidationException("申请执行人不属于当前项目。", 422);
       }
-      if (req.debtorId() != null && !repo.debtorBelongsToProject(req.debtorId(), projectId)) {
+      if (req.debtorId() != null && !repo.debtorBelongsToProject(req.debtorId(), actualProjectId)) {
         throw new WorkbenchValidationException("被执行人不属于当前项目。", 422);
       }
 
       repo.updateCase(caseId, req);
 
-      writeAudit(httpReq, principal.userId(), groupId, "Workbench.CaseUpdated", "case", caseId,
-          responseJson.toJson(Map.of("caseId", caseId, "projectId", projectId)));
-      writeOutbox(groupId, projectId, caseId, principal.userId(), "Case.Updated",
+      writeAudit(httpReq, principal.userId(), groupId, "case_update", "case", caseId,
+          responseJson.toJson(Map.of("caseId", caseId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, caseId, principal.userId(), "Case.Updated",
           "Case.Updated:case:" + caseId + ":v1",
-          responseJson.toJson(Map.of("caseId", caseId, "projectId", projectId)));
+          responseJson.toJson(Map.of("caseId", caseId, "projectId", actualProjectId)));
+    });
+  }
+
+  public void deleteCase(AuthPrincipal principal, UUID projectId, UUID caseId, HttpServletRequest httpReq) {
+    tx.run(principal, () -> {
+      var row = repo.findCaseBase(caseId).orElseThrow(ProjectNotFoundException::new);
+      UUID groupId = (UUID) row.get("group_id");
+      UUID actualProjectId = (UUID) row.get("project_id");
+      if (projectId != null && !projectId.equals(actualProjectId)) {
+        throw new ProjectNotFoundException();
+      }
+      assertCanWriteGroup(groupId);
+
+      try {
+        repo.deleteCase(caseId);
+      } catch (DataIntegrityViolationException e) {
+        throw new WorkbenchValidationException("该记录存在关联数据，无法删除。", 409);
+      }
+
+      writeAudit(httpReq, principal.userId(), groupId, "case_delete", "case", caseId,
+          responseJson.toJson(Map.of("caseId", caseId, "projectId", actualProjectId)));
+      writeOutbox(groupId, actualProjectId, caseId, principal.userId(), "Case.Deleted",
+          "Case.Deleted:case:" + caseId + ":v1",
+          responseJson.toJson(Map.of("caseId", caseId, "projectId", actualProjectId)));
     });
   }
 

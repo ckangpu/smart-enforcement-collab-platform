@@ -16,7 +16,7 @@
   "common.none": "无",
   "common.add": "新增",
   "common.delete": "删除",
-  "common.confirmDelete": "确认要删除吗？",
+  "common.confirmDelete": "确认要删除吗？此操作不可撤销。",
   "common.all": "全部",
   "common.loading": "加载中...",
   "common.empty": "暂无数据",
