@@ -1,6 +1,7 @@
 package com.secp.api.project.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +17,8 @@ public record ProjectDetailResponse(
 
   public record ProjectDto(
       UUID projectId,
+      String code,
+      LocalDate acceptedAt,
       String name,
       UUID groupId,
       List<String> bizTags,
@@ -52,6 +55,8 @@ public record ProjectDetailResponse(
 
   public record CaseDto(
       UUID caseId,
+      String code,
+      LocalDate acceptedAt,
       String title,
       String status,
       OffsetDateTime createdAt

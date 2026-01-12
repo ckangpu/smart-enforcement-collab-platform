@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +47,8 @@ public class AdminRepository {
 
   public void insertProject(UUID projectId,
                             UUID groupId,
+                            String code,
+                            LocalDate acceptedAt,
                             String name,
                             UUID actorUserId,
                             List<String> bizTags,
@@ -56,11 +59,17 @@ public class AdminRepository {
 
     jdbc.update(
         """
-        insert into project(id, group_id, name, status, created_by, biz_tags, execution_target_amount, mandate_amount)
-        values (?,?,?, 'ACTIVE', ?, ?, ?, ?)
+        insert into project(
+          id, group_id, code, accepted_at,
+          name, status, created_by,
+          biz_tags, execution_target_amount, mandate_amount
+        )
+        values (?,?,?,?, ?, 'ACTIVE', ?, ?, ?, ?)
         """,
         projectId,
         groupId,
+        code,
+        acceptedAt,
         name,
         actorUserId,
         tags,
@@ -72,16 +81,20 @@ public class AdminRepository {
   public void insertCase(UUID caseId,
                          UUID projectId,
                          UUID groupIdInherited,
+                         String code,
+                         LocalDate acceptedAt,
                          String title,
                          UUID actorUserId) {
     jdbc.update(
         """
-        insert into \"case\"(id, group_id, project_id, title, status, created_by)
-        values (?,?,?,?, 'OPEN', ?)
+        insert into "case"(id, group_id, project_id, code, accepted_at, title, status, created_by)
+        values (?,?,?,?,?, ?, 'OPEN', ?)
         """,
         caseId,
         groupIdInherited,
         projectId,
+        code,
+        acceptedAt,
         title,
         actorUserId
     );
@@ -89,6 +102,8 @@ public class AdminRepository {
 
   public UUID upsertProject(UUID projectId,
                            UUID groupId,
+                           String code,
+                           LocalDate acceptedAt,
                            String name,
                            UUID actorUserId,
                            BigDecimal executionTargetAmount,
@@ -98,8 +113,12 @@ public class AdminRepository {
 
     jdbc.update(
         """
-        insert into project(id, group_id, name, status, created_by, execution_target_amount, mandate_amount)
-      values (?,?,?, 'ACTIVE', ?, ?, ?)
+        insert into project(
+          id, group_id, code, accepted_at,
+          name, status, created_by,
+          execution_target_amount, mandate_amount
+        )
+      values (?,?,?,?, ?, 'ACTIVE', ?, ?, ?)
         on conflict (id) do update
           set name = excluded.name,
               execution_target_amount = excluded.execution_target_amount,
@@ -108,6 +127,8 @@ public class AdminRepository {
         """,
         id,
         groupId,
+        code,
+        acceptedAt,
         name,
         actorUserId,
         executionTargetAmount,
@@ -120,6 +141,8 @@ public class AdminRepository {
   public UUID upsertCase(UUID caseId,
                         UUID projectId,
                         UUID groupIdInherited,
+                        String code,
+                        LocalDate acceptedAt,
                         String title,
                         UUID actorUserId) {
 
@@ -127,8 +150,8 @@ public class AdminRepository {
 
     jdbc.update(
         """
-        insert into \"case\"(id, group_id, project_id, title, status, created_by)
-        values (?,?,?,?, 'OPEN', ?)
+      insert into "case"(id, group_id, project_id, code, accepted_at, title, status, created_by)
+      values (?,?,?,?,?, ?, 'OPEN', ?)
         on conflict (id) do update
           set title = excluded.title,
               updated_at = now()
@@ -136,6 +159,8 @@ public class AdminRepository {
         id,
         groupIdInherited,
         projectId,
+      code,
+      acceptedAt,
         title,
         actorUserId
     );

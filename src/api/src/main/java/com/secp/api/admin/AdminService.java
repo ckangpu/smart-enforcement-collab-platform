@@ -3,13 +3,16 @@ package com.secp.api.admin;
 import com.secp.api.admin.dto.*;
 import com.secp.api.auth.AuthPrincipal;
 import com.secp.api.auth.PasswordHasher;
+import com.secp.api.infra.BizCodeService;
 import com.secp.api.infra.RequestIdFilter;
 import com.secp.api.infra.tx.TransactionalExecutor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import java.util.List;
@@ -22,6 +25,7 @@ public class AdminService {
   private final JdbcTemplate jdbc;
   private final AdminRepository adminRepository;
   private final PasswordHasher passwordHasher;
+  private final BizCodeService bizCodeService;
 
   public void setUserPassword(AuthPrincipal principal,
                               UUID userId,
@@ -82,15 +86,23 @@ public class AdminService {
       }
 
       UUID projectId = UUID.randomUUID();
-      adminRepository.insertProject(
-          projectId,
-          req.groupId(),
-          req.name(),
-          principal.userId(),
-          req.bizTags(),
-          req.executionTargetAmount(),
-          req.mandateAmount()
-      );
+      LocalDate acceptedAt = req.acceptedAt();
+      String code = resolveBizCode("X", acceptedAt, req.codeSource(), req.code());
+      try {
+        adminRepository.insertProject(
+            projectId,
+            req.groupId(),
+            code,
+            acceptedAt,
+            req.name(),
+            principal.userId(),
+            req.bizTags(),
+            req.executionTargetAmount(),
+            req.mandateAmount()
+        );
+      } catch (DuplicateKeyException e) {
+        throw new AdminBizCodeConflictException();
+      }
 
       writeAudit(httpReq, principal.userId(), req.groupId(), "admin_project_create", "project", projectId,
           toJson(Map.of(
@@ -106,11 +118,12 @@ public class AdminService {
           toJson(Map.of(
               "projectId", projectId,
               "groupId", req.groupId(),
-              "name", req.name()
+              "name", req.name(),
+              "code", code
           ))
       );
 
-      return new AdminCreateProjectResponse(projectId, req.groupId(), req.name());
+      return new AdminCreateProjectResponse(projectId, code, req.groupId(), req.name());
     });
   }
 
@@ -128,7 +141,13 @@ public class AdminService {
       }
 
       UUID caseId = UUID.randomUUID();
-      adminRepository.insertCase(caseId, req.projectId(), groupId, req.title(), principal.userId());
+      LocalDate acceptedAt = req.acceptedAt();
+      String code = resolveBizCode("A", acceptedAt, req.codeSource(), req.code());
+      try {
+        adminRepository.insertCase(caseId, req.projectId(), groupId, code, acceptedAt, req.title(), principal.userId());
+      } catch (DuplicateKeyException e) {
+        throw new AdminBizCodeConflictException();
+      }
 
       writeAudit(httpReq, principal.userId(), groupId, "admin_case_create", "case", caseId,
           toJson(Map.of(
@@ -144,12 +163,41 @@ public class AdminService {
           toJson(Map.of(
               "caseId", caseId,
               "projectId", req.projectId(),
-              "groupId", groupId
+              "groupId", groupId,
+              "code", code
           ))
       );
 
-      return new AdminCreateCaseResponse(caseId, req.projectId(), groupId);
+      return new AdminCreateCaseResponse(caseId, req.projectId(), groupId, code);
     });
+  }
+
+  private String resolveBizCode(String expectedPrefix,
+                                LocalDate acceptedAt,
+                                String codeSource,
+                                String manualCode) {
+    String src = codeSource == null ? "AUTO" : codeSource.trim().toUpperCase();
+    if ("MANUAL".equals(src) || (manualCode != null && !manualCode.isBlank())) {
+      String code = String.valueOf(manualCode == null ? "" : manualCode).trim();
+      if (!isValidBizCode(code, expectedPrefix)) {
+        throw new AdminBizCodeInvalidException("invalid_code:" + code);
+      }
+      return code;
+    }
+    if (!"AUTO".equals(src)) {
+      throw new AdminBizCodeInvalidException("invalid_code_source:" + src);
+    }
+    return bizCodeService.nextCode(expectedPrefix, acceptedAt);
+  }
+
+  private boolean isValidBizCode(String code, String expectedPrefix) {
+    if (code == null) return false;
+    String c = code.trim();
+    if (!c.startsWith(expectedPrefix)) return false;
+    if (!c.matches("^[A-Z]{1,8}\\d{6}\\d{4}$")) return false;
+    String yyyymm = c.substring(expectedPrefix.length(), expectedPrefix.length() + 6);
+    int mm = Integer.parseInt(yyyymm.substring(4, 6));
+    return mm >= 1 && mm <= 12;
   }
 
   public void addProjectMember(AuthPrincipal principal,

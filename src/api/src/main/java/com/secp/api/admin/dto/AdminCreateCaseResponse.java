@@ -5,5 +5,6 @@ import java.util.UUID;
 public record AdminCreateCaseResponse(
     UUID caseId,
     UUID projectId,
-    UUID groupId
+    UUID groupId,
+    String code
 ) {}

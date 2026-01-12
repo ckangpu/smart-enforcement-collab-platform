@@ -40,6 +40,8 @@ function localizeCommonErrorCode(code) {
     UNAUTHORIZED: t('error.unauthorized'),
     INVALID_TOKEN: t('error.unauthorized'),
     FORBIDDEN: t('error.forbiddenInternalOnly'),
+    INVALID_CREDENTIALS: '用户名或密码错误。',
+    INVALID_CODE: '验证码错误。',
     NOT_FOUND: t('error.notFound'),
     CONFLICT: '请求冲突，请稍后重试。',
     UNPROCESSABLE_ENTITY: '请求参数不符合要求。',

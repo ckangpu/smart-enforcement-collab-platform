@@ -83,5 +83,85 @@
       {{PAYMENTS_ROWS}}
     </tbody>
   </table>
+
+  <h2>8. 工作台：申请执行人（SR）</h2>
+  <div class="meta">汇总：{{WB_SR}}</div>
+  <table class="small">
+    <thead>
+      <tr><th>申请执行人ID</th><th>SR编号</th><th>名称</th><th>证件号</th><th>统一代码</th><th>电子送达手机号</th></tr>
+    </thead>
+    <tbody>
+      {{WB_CREDITORS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>9. 工作台：被执行人（BR）</h2>
+  <div class="meta">汇总：{{WB_BR}}</div>
+  <table class="small">
+    <thead>
+      <tr><th>被执行人ID</th><th>BR编号</th><th>名称</th><th>证件号</th><th>统一代码</th><th>电子送达手机号</th></tr>
+    </thead>
+    <tbody>
+      {{WB_DEBTORS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>10. 工作台：案件执行依据/绑定（按案件）</h2>
+  <div class="meta">汇总：{{WB_CASE_EXECUTION_BASIS}}</div>
+  <table class="small">
+    <thead>
+      <tr>
+        <th>案件ID</th><th>案件编号</th><th>案件名称</th>
+        <th>绑定申请执行人</th><th>绑定被执行人</th>
+        <th>案由</th><th>依据类型</th><th>文书号</th><th>出具机构</th><th>主要内容</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{WB_CASE_BASIS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>11. 工作台：线索（按被执行人）</h2>
+  <div class="meta">汇总：{{WB_CLUES}}</div>
+  <table class="small">
+    <thead>
+      <tr><th>线索ID</th><th>XS编号</th><th>被执行人</th><th>类别</th><th>线索内容</th><th>来源</th><th>采集日期</th><th>采集人</th></tr>
+    </thead>
+    <tbody>
+      {{WB_CLUES_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>12. 工作台：程序/措施/费用汇总（按案件）</h2>
+  <div class="meta">程序汇总：{{WB_PROCEDURES}}</div>
+  <div class="meta">控制措施汇总：{{WB_MEASURES_CONTROL}}</div>
+  <div class="meta">惩戒措施汇总：{{WB_MEASURES_SANCTION}}</div>
+  <div class="meta">费用汇总：{{WB_COSTS}}</div>
+  <table class="small">
+    <thead>
+      <tr>
+        <th>类型</th><th>案件ID</th><th>案件编号</th><th>案件名称</th>
+        <th>名称/类别</th><th>日期</th><th>金额</th><th>结果</th><th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{WB_ITEMS_ROWS}}
+    </tbody>
+  </table>
+
+  <h2>13. 工作台：证明材料摘要</h2>
+  <div class="meta">汇总：{{WB_ATTACHMENTS}}</div>
+  <div class="meta">证明材料条数（最多展示 200 条）：{{WB_ATTACHMENTS_TOTAL}}</div>
+  <table class="small">
+    <thead>
+      <tr>
+        <th>对象类型</th><th>对象ID</th><th>标题</th>
+        <th>文件ID</th><th>文件名</th><th>类型</th><th>大小</th><th>创建时间</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{WB_ATTACHMENTS_ROWS}}
+    </tbody>
+  </table>
 </body>
 </html>

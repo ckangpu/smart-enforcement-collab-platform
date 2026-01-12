@@ -8,6 +8,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class AdminExceptionHandler {
 
+  @ExceptionHandler(AdminBizCodeInvalidException.class)
+  public ResponseEntity<ErrorResponse> invalidBizCode(AdminBizCodeInvalidException ex) {
+    return ResponseEntity.status(422).body(ErrorResponse.of("UNPROCESSABLE_ENTITY", "编号格式不正确。", ex.getMessage()));
+  }
+
+  @ExceptionHandler(AdminBizCodeConflictException.class)
+  public ResponseEntity<ErrorResponse> bizCodeConflict(AdminBizCodeConflictException ex) {
+    return ResponseEntity.status(409).body(ErrorResponse.of("CONFLICT", "编号已存在，请更换。"));
+  }
+
   @ExceptionHandler(AdminForbiddenException.class)
   public ResponseEntity<ErrorResponse> forbidden(AdminForbiddenException ex) {
     // Do not leak existence for internal admin resources.

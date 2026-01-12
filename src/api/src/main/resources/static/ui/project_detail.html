@@ -31,7 +31,283 @@
     </div>
 
     <div class="section">
-      <h2 data-i18n-key="projectDetail.section.members">2) 成员</h2>
+      <h2 data-i18n-key="projectDetail.section.workbench">2) 工作台（可编辑）</h2>
+
+      <div class="card">
+        <div class="note" data-i18n-key="projectDetail.workbench.tip">说明：以下为工作台数据，保存后会写入审计与事件。</div>
+
+        <div class="section" style="margin-top: 10px">
+          <h3 data-i18n-key="projectDetail.workbench.creditors">2.1 申请执行人</h3>
+          <div class="actions">
+            <button id="addCreditorBtn" data-i18n-key="common.add">新增</button>
+            <span id="creditorMsg" class="note"></span>
+          </div>
+          <table class="table" id="creditorsTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.srCode">SR编号</th>
+                <th data-i18n-key="workbench.partyName">名称</th>
+                <th data-i18n-key="workbench.idNo">证件号</th>
+                <th data-i18n-key="workbench.unifiedCode">统一代码</th>
+                <th data-i18n-key="workbench.deliveryAddress">送达地址</th>
+                <th data-i18n-key="workbench.note">备注</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.debtors">2.2 被执行人</h3>
+          <div class="actions">
+            <button id="addDebtorBtn" data-i18n-key="common.add">新增</button>
+            <span id="debtorMsg" class="note"></span>
+          </div>
+          <table class="table" id="debtorsTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.brCode">BR编号</th>
+                <th data-i18n-key="workbench.partyName">名称</th>
+                <th data-i18n-key="workbench.idNo">证件号</th>
+                <th data-i18n-key="workbench.unifiedCode">统一代码</th>
+                <th data-i18n-key="workbench.deliveryAddress">送达地址</th>
+                <th data-i18n-key="workbench.note">备注</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.clues">2.3 被执行人线索</h3>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="clueDebtorSel" data-i18n-key="projectDetail.workbench.selectDebtor">选择被执行人</label>
+              <select id="clueDebtorSel"></select>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="addClueBtn" data-i18n-key="common.add">新增</button>
+            <span id="clueMsg" class="note"></span>
+          </div>
+          <table class="table" id="cluesTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.xsCode">XS编号</th>
+                <th data-i18n-key="workbench.relatedDebtor">关联被执行人</th>
+                <th data-i18n-key="workbench.clueCategory">类别</th>
+                <th data-i18n-key="workbench.clueDetail">线索内容</th>
+                <th data-i18n-key="workbench.clueSource">来源</th>
+                <th data-i18n-key="workbench.collectedAt">采集日期</th>
+                <th data-i18n-key="workbench.collector">采集人</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.caseBase">2.4 案件基础信息（绑定 SR/BR 与执行依据）</h3>
+          <div class="actions">
+            <button id="addCaseBtn" data-i18n-key="common.add">新增</button>
+            <span id="caseMsg" class="note"></span>
+          </div>
+          <table class="table" id="wbCasesTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="table.caseCode">案件编号</th>
+                <th data-i18n-key="table.caseTitle">案件标题</th>
+                <th data-i18n-key="workbench.srCode">SR编号</th>
+                <th data-i18n-key="workbench.brCode">BR编号</th>
+                <th data-i18n-key="workbench.basisDocType">执行依据类型</th>
+                <th data-i18n-key="workbench.basisDocNo">文书号</th>
+                <th data-i18n-key="workbench.basisDecidedAt">作出时间</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbCaseSel" data-i18n-key="projectDetail.workbench.selectCase">选择案件</label>
+              <select id="wbCaseSel"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbCreditorSel" data-i18n-key="projectDetail.workbench.bindCreditor">绑定申请执行人</label>
+              <select id="wbCreditorSel"></select>
+            </div>
+            <div class="field" style="flex:1">
+              <label for="wbDebtorSel" data-i18n-key="projectDetail.workbench.bindDebtor">绑定被执行人</label>
+              <select id="wbDebtorSel"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbCause" data-i18n-key="workbench.cause">案由</label>
+              <input id="wbCause" type="text" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbBasisDocType" data-i18n-key="workbench.basisDocType">执行依据类型</label>
+              <input id="wbBasisDocType" type="text" />
+            </div>
+            <div class="field" style="flex:1">
+              <label for="wbBasisDocNo" data-i18n-key="workbench.basisDocNo">文书号</label>
+              <input id="wbBasisDocNo" type="text" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbBasisOrg" data-i18n-key="workbench.basisOrg">出具机构</label>
+              <input id="wbBasisOrg" type="text" />
+            </div>
+            <div class="field" style="flex:1">
+              <label for="wbBasisDecidedAt" data-i18n-key="workbench.basisDecidedAt">作出时间</label>
+              <input id="wbBasisDecidedAt" type="date" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="wbBasisMainText" data-i18n-key="workbench.basisMainText">主要内容</label>
+              <input id="wbBasisMainText" type="text" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="saveCaseBaseBtn" data-i18n-key="common.save">保存</button>
+            <span id="caseBaseMsg" class="note"></span>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.procedures">2.5 程序</h3>
+          <div class="actions">
+            <button id="addProcBtn" data-i18n-key="common.add">新增</button>
+            <span id="procMsg" class="note"></span>
+          </div>
+          <table class="table" id="procTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.procName">名称</th>
+                <th data-i18n-key="workbench.procDocNo">文书号</th>
+                <th data-i18n-key="workbench.procOrg">机构</th>
+                <th data-i18n-key="workbench.decidedAt">决定日期</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.measuresControl">2.6 控制措施</h3>
+          <div class="actions">
+            <button id="addCtlMeasureBtn" data-i18n-key="common.add">新增</button>
+            <span id="ctlMeasureMsg" class="note"></span>
+          </div>
+          <table class="table" id="ctlMeasureTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.measureName">名称</th>
+                <th data-i18n-key="workbench.measureTarget">对象</th>
+                <th data-i18n-key="workbench.measureDueAt">到期日</th>
+                <th data-i18n-key="workbench.measureResult">结果</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.measuresSanction">2.7 惩戒措施</h3>
+          <div class="actions">
+            <button id="addSanMeasureBtn" data-i18n-key="common.add">新增</button>
+            <span id="sanMeasureMsg" class="note"></span>
+          </div>
+          <table class="table" id="sanMeasureTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.measureName">名称</th>
+                <th data-i18n-key="workbench.measureTarget">对象</th>
+                <th data-i18n-key="workbench.measureDueAt">到期日</th>
+                <th data-i18n-key="workbench.measureResult">结果</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.costs">2.8 费用</h3>
+          <div class="actions">
+            <button id="addCostBtn" data-i18n-key="common.add">新增</button>
+            <span id="costMsg" class="note"></span>
+          </div>
+          <table class="table" id="costTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.costCategory">类别</th>
+                <th data-i18n-key="workbench.costAmount">金额</th>
+                <th data-i18n-key="workbench.occurredAt">发生日期</th>
+                <th data-i18n-key="workbench.payer">付款方</th>
+                <th data-i18n-key="workbench.note">备注</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section" style="margin-top: 16px">
+          <h3 data-i18n-key="projectDetail.workbench.attachments">2.9 证明材料（上传/预览/解绑）</h3>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="attObjectType" data-i18n-key="workbench.attachment.objectType">绑定对象类型</label>
+              <select id="attObjectType"></select>
+            </div>
+            <div class="field" style="flex:2">
+              <label for="attObjectId" data-i18n-key="workbench.attachment.objectId">绑定对象</label>
+              <select id="attObjectId"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="attTitle" data-i18n-key="workbench.attachment.title">标题（可选）</label>
+              <input id="attTitle" type="text" />
+            </div>
+            <div class="field" style="flex:1">
+              <label for="attUploadCaseId" data-i18n-key="workbench.attachment.uploadCase">上传归属案件（必选）</label>
+              <select id="attUploadCaseId"></select>
+            </div>
+          </div>
+          <div class="actions">
+            <input id="attFile" type="file" />
+            <button id="attUploadBtn" data-i18n-key="workbench.attachment.uploadAndBind">上传并绑定</button>
+            <span id="attMsg" class="note"></span>
+          </div>
+          <table class="table" id="attTbl">
+            <thead>
+              <tr>
+                <th data-i18n-key="workbench.attachment.title">标题</th>
+                <th data-i18n-key="workbench.attachment.fileId">文件ID</th>
+                <th data-i18n-key="workbench.attachment.createdAt">创建时间</th>
+                <th data-i18n-key="common.operation">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="projectDetail.section.members">3) 成员</h2>
       <div class="card">
         <div class="note" data-i18n-key="projectDetail.members.project">项目成员</div>
         <table class="table" id="pmTbl"><thead><tr><th data-i18n-key="table.userId">用户ID</th><th data-i18n-key="table.role">角色</th><th data-i18n-key="table.username">用户名</th><th data-i18n-key="table.phone">手机号</th></tr></thead><tbody></tbody></table>
@@ -42,31 +318,48 @@
     </div>
 
     <div class="section">
-      <h2 data-i18n-key="projectDetail.section.cases">3) 案件列表</h2>
+      <h2 data-i18n-key="projectDetail.section.cases">4) 案件列表</h2>
       <div class="card">
-        <table class="table" id="casesTbl"><thead><tr><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.caseTitle">案件标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.createdAt">创建时间</th></tr></thead><tbody></tbody></table>
+        <table class="table" id="casesTbl"><thead><tr><th data-i18n-key="table.caseCode">案件编号</th><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.caseTitle">案件标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.createdAt">创建时间</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
 
     <div class="section">
-      <h2 data-i18n-key="projectDetail.section.tasks">4) 任务列表</h2>
+      <h2 data-i18n-key="projectDetail.section.tasks">5) 任务列表</h2>
       <div class="card">
         <table class="table" id="tasksTbl"><thead><tr><th data-i18n-key="table.taskId">任务ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.priority">优先级</th><th data-i18n-key="table.caseId">案件ID</th><th data-i18n-key="table.instructionItemId">指令项ID</th><th data-i18n-key="tasks.table.dueAt">截止时间</th><th data-i18n-key="table.assigneeUserId">负责人用户ID</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
 
     <div class="section">
-      <h2 data-i18n-key="projectDetail.section.instructions">5) 指令汇总</h2>
+      <h2 data-i18n-key="projectDetail.section.instructions">6) 指令汇总</h2>
       <div class="card">
         <table class="table" id="insTbl"><thead><tr><th data-i18n-key="table.instructionId">指令ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.version">版本</th><th data-i18n-key="table.deadline">截止时间</th><th data-i18n-key="table.issuedAt">下发时间</th><th data-i18n-key="table.itemTotal">总项数</th><th data-i18n-key="table.itemDone">已完成项数</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
 
     <div class="section">
-      <h2 data-i18n-key="projectDetail.section.payments">6) 回款汇总</h2>
+      <h2 data-i18n-key="projectDetail.section.payments">7) 回款汇总</h2>
       <div class="card" id="payBox"></div>
     </div>
   </div>
+
+  <dialog id="formDlg" style="padding: 0; border: 1px solid #ddd; border-radius: 10px; width: min(900px, 96vw)">
+    <form method="dialog" style="margin:0">
+      <div style="padding: 14px; border-bottom: 1px solid #eee; display:flex; align-items:center; gap:10px">
+        <strong id="formDlgTitle" style="font-size: 14px"></strong>
+        <span class="spacer"></span>
+        <button class="secondary" value="close" data-i18n-key="common.close">关闭</button>
+      </div>
+      <div style="padding: 14px">
+        <div id="formDlgBody"></div>
+        <div class="actions" style="margin-top: 12px">
+          <button id="formDlgOk" value="default" data-i18n-key="common.save">保存</button>
+          <span id="formDlgMsg" class="note"></span>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
   <script type="module">
     import { initUiI18n, applyI18n, t, clearToken, apiFetch, authHeader, formatDate, maskPhone, renderError, parseErrorBodyText } from '/ui/app.js';
@@ -100,12 +393,49 @@
         .replaceAll("'", '&#39;');
     }
 
-    function kvTable(obj) {
-      if (!obj || typeof obj !== 'object') return `<div class="note">${esc(t('common.empty'))}</div>`;
-      const rows = Object.entries(obj).map(([k, v]) => {
-        const vv = (k.toLowerCase().includes('at')) ? formatDate(v) : v;
-        return `<tr><th>${esc(k)}</th><td>${esc(vv)}</td></tr>`;
-      }).join('');
+    function tr(label, value) {
+      return `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`;
+    }
+
+    function projectInfoTable(p) {
+      if (!p || typeof p !== 'object') return `<div class="note">${esc(t('common.empty'))}</div>`;
+
+      const bizTags = Array.isArray(p.bizTags) ? p.bizTags.filter(v => v).join('，') : '';
+      const rows = [
+        tr(t('projects.table.projectCode'), p.code ?? ''),
+        tr(t('table.projectId'), p.projectId ?? ''),
+        tr(t('table.acceptedAt'), p.acceptedAt ?? ''),
+        tr(t('projects.table.name'), p.name ?? ''),
+        tr(t('table.groupId'), p.groupId ?? ''),
+        tr(t('projects.table.status'), p.status ?? ''),
+        tr(t('projects.table.entrustor'), p.entrustor ?? ''),
+        tr(t('projects.table.progressStatus'), p.progressStatus ?? ''),
+        tr(t('projects.table.targetDate'), p.targetDate ?? ''),
+        tr(t('projects.table.owner'), p.ownerName ?? ''),
+        tr(t('projects.table.lead'), p.leadName ?? ''),
+        tr(t('projects.table.assist'), p.assistName ?? ''),
+        tr(t('workbench.note'), p.note ?? ''),
+        // old project detail fields (may be absent)
+        tr(t('table.bizTags'), bizTags),
+        tr(t('table.mandateAmount'), p.mandateAmount ?? ''),
+        tr(t('table.executionTargetAmount'), p.executionTargetAmount ?? ''),
+        tr(t('table.createdAt'), formatDate(p.createdAt)),
+        tr(t('table.updatedAt'), formatDate(p.updatedAt))
+      ].join('');
+
+      return `<table class="table"><tbody>${rows}</tbody></table>`;
+    }
+
+    function paymentsTable(pay) {
+      if (!pay || typeof pay !== 'object') return `<div class="note">${esc(t('common.empty'))}</div>`;
+
+      const rows = [
+        tr(t('payments.sumAll'), pay.sumAll ?? '0'),
+        tr(t('payments.sum30d'), pay.sum30d ?? '0'),
+        tr(t('payments.effectiveCount'), pay.effectiveCount ?? '0'),
+        tr(t('payments.latestPaidAt'), formatDate(pay.latestPaidAt))
+      ].join('');
+
       return `<table class="table"><tbody>${rows}</tbody></table>`;
     }
 
@@ -121,7 +451,15 @@
 
       for (const r of rows) {
         const tr = document.createElement('tr');
-        tr.innerHTML = cols.map(c => `<td>${esc(c(r))}</td>`).join('');
+        tr.innerHTML = cols.map(c => {
+          if (typeof c === 'function') {
+            return `<td>${esc(c(r))}</td>`;
+          }
+          if (c && typeof c === 'object' && typeof c.html === 'function') {
+            return `<td>${c.html(r)}</td>`;
+          }
+          return `<td></td>`;
+        }).join('');
         tbodyEl.appendChild(tr);
       }
     }
@@ -152,7 +490,7 @@
         return;
       }
 
-      $('projectBox').innerHTML = kvTable(json.project);
+      $('projectBox').innerHTML = projectInfoTable(json.project);
 
       const pms = json?.members?.projectMembers ?? [];
       fillTable($('pmTbl').querySelector('tbody'), pms, [
@@ -173,8 +511,21 @@
 
       const cases = json?.cases ?? [];
       fillTable($('casesTbl').querySelector('tbody'), cases, [
+        {
+          html: (c) => {
+            const caseId = c.caseId ?? '';
+            const label = c.code ?? caseId;
+            return `<a href="/ui/case_detail.html?caseId=${encodeURIComponent(caseId)}">${esc(label)}</a>`;
+          }
+        },
         (c) => c.caseId,
-        (c) => c.title,
+        {
+          html: (c) => {
+            const caseId = c.caseId ?? '';
+            const label = c.title ?? '';
+            return `<a href="/ui/case_detail.html?caseId=${encodeURIComponent(caseId)}">${esc(label)}</a>`;
+          }
+        },
         (c) => c.status,
         (c) => formatDate(c.createdAt)
       ]);
@@ -203,8 +554,1454 @@
         (i) => i.itemDone
       ]);
 
-      $('payBox').innerHTML = kvTable(json.payments);
+      $('payBox').innerHTML = paymentsTable(json.payments);
     }
+
+    // -------- Workbench (editable) --------
+    const wb = {
+      project: null,
+      creditors: [],
+      debtors: [],
+      cases: [],
+      cluesByDebtor: new Map(),
+      procedures: [],
+      measuresCtl: [],
+      measuresSan: [],
+      costs: [],
+      attachments: []
+    };
+
+    const formDlg = $('formDlg');
+    const formDlgTitle = $('formDlgTitle');
+    const formDlgBody = $('formDlgBody');
+    const formDlgMsg = $('formDlgMsg');
+
+    function setMsg(id, msg) {
+      const el = $(id);
+      if (!el) return;
+      el.textContent = msg || '';
+    }
+
+    function safeDate(v) {
+      if (!v) return '';
+      return String(v).slice(0, 10);
+    }
+
+    function buildOption(value, label, selected = false) {
+      const opt = document.createElement('option');
+      opt.value = value ?? '';
+      opt.textContent = label ?? '';
+      if (selected) opt.selected = true;
+      return opt;
+    }
+
+    function fillSelect(el, options, currentValue, withEmpty = true) {
+      el.innerHTML = '';
+      if (withEmpty) el.appendChild(buildOption('', t('common.none'), !currentValue));
+      for (const o of options) {
+        el.appendChild(buildOption(o.value, o.label, currentValue && String(o.value) === String(currentValue)));
+      }
+    }
+
+    function formFieldHtml(f, value) {
+      const id = `f_${f.key}`;
+      const label = esc(f.label);
+      if (f.type === 'select') {
+        const opts = (f.options || []).map(o => {
+          const sel = String(o.value) === String(value ?? '');
+          return `<option value="${esc(o.value)}" ${sel ? 'selected' : ''}>${esc(o.label)}</option>`;
+        }).join('');
+        return `
+          <div class="field" style="flex:1">
+            <label for="${id}">${label}${f.required ? '（必填）' : ''}</label>
+            <select id="${id}">${opts}</select>
+          </div>
+        `;
+      }
+
+      const type = f.type === 'date' ? 'date' : 'text';
+      const v = f.type === 'date' ? safeDate(value) : String(value ?? '');
+      return `
+        <div class="field" style="flex:1">
+          <label for="${id}">${label}${f.required ? '（必填）' : ''}</label>
+          <input id="${id}" type="${type}" value="${esc(v)}" />
+        </div>
+      `;
+    }
+
+    async function openFormDialog(title, fields, initial) {
+      formDlgTitle.textContent = title;
+      formDlgMsg.textContent = '';
+      formDlgBody.innerHTML = '';
+
+      // render rows (3 fields per row)
+      let row = document.createElement('div');
+      row.className = 'row';
+      let count = 0;
+      for (const f of fields) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = formFieldHtml(f, initial?.[f.key]);
+        row.appendChild(wrap.firstElementChild);
+        count++;
+        if (count % 3 === 0) {
+          formDlgBody.appendChild(row);
+          row = document.createElement('div');
+          row.className = 'row';
+        }
+      }
+      if (row.childElementCount > 0) formDlgBody.appendChild(row);
+
+      formDlg.showModal();
+
+      return await new Promise((resolve) => {
+        const ok = $('formDlgOk');
+        const onOk = (ev) => {
+          ev.preventDefault();
+          const out = {};
+          for (const f of fields) {
+            const el = document.getElementById(`f_${f.key}`);
+            const raw = el ? el.value : '';
+            if (f.required && !String(raw ?? '').trim()) {
+              formDlgMsg.textContent = `${f.label}为必填项。`;
+              return;
+            }
+            out[f.key] = raw === '' ? null : raw;
+          }
+          formDlg.close();
+          resolve(out);
+        };
+        ok.addEventListener('click', onOk, { once: true });
+
+        const onClose = () => {
+          resolve(null);
+        };
+        formDlg.addEventListener('close', onClose, { once: true });
+      });
+    }
+
+    async function wbFetchJson(path, opts) {
+      const res = await apiFetch(path, opts);
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        throw new Error(`${err.message || text}`);
+      }
+      return text ? JSON.parse(text) : null;
+    }
+
+    function renderCreditors() {
+      const tbody = $('creditorsTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.creditors || [];
+      if (rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="7" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const c of rows) {
+        const delivery = c.mailAddress || c.regAddress || '';
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(c.srCode ?? '')}</td>
+          <td>${esc(c.name ?? '')}</td>
+          <td>${esc(c.idNo ?? '')}</td>
+          <td>${esc(c.unifiedCode ?? '')}</td>
+          <td>${esc(delivery)}</td>
+          <td>${esc(c.note ?? '')}</td>
+          <td>
+            <button class="secondary" data-act="editCreditor" data-id="${esc(c.creditorId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delCreditor" data-id="${esc(c.creditorId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderDebtors() {
+      const tbody = $('debtorsTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.debtors || [];
+      if (rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="7" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const d of rows) {
+        const delivery = d.mailAddress || d.regAddress || '';
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(d.brCode ?? '')}</td>
+          <td>${esc(d.name ?? '')}</td>
+          <td>${esc(d.idNo ?? '')}</td>
+          <td>${esc(d.unifiedCode ?? '')}</td>
+          <td>${esc(delivery)}</td>
+          <td>${esc(d.note ?? '')}</td>
+          <td>
+            <button class="secondary" data-act="editDebtor" data-id="${esc(d.debtorId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delDebtor" data-id="${esc(d.debtorId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderClues(debtorId) {
+      const tbody = $('cluesTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.cluesByDebtor.get(String(debtorId)) || [];
+      if (!debtorId) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="8" class="note">${esc(t('projectDetail.workbench.selectDebtorHint'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      if (rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="8" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      const debtorName = (wb.debtors || []).find(d => String(d.debtorId) === String(debtorId))?.name || '';
+      for (const x of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(x.xsCode ?? '')}</td>
+          <td>${esc(debtorName)}</td>
+          <td>${esc(x.category ?? '')}</td>
+          <td>${esc(x.detail ?? '')}</td>
+          <td>${esc(x.source ?? '')}</td>
+          <td>${esc(safeDate(x.collectedAt) || '')}</td>
+          <td>${esc(x.collectorName ?? '')}</td>
+          <td>
+            <button class="secondary" data-act="editClue" data-id="${esc(x.clueId)}" data-debtor="${esc(debtorId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delClue" data-id="${esc(x.clueId)}" data-debtor="${esc(debtorId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderWbCases() {
+      const tbody = $('wbCasesTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.cases || [];
+      if (!rows || rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="7" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const c of rows) {
+        const caseId = c.caseId ?? '';
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td><a href="/ui/case_detail.html?caseId=${encodeURIComponent(caseId)}">${esc(c.caseCode ?? '')}</a></td>
+          <td><a href="/ui/case_detail.html?caseId=${encodeURIComponent(caseId)}">${esc(c.name ?? '')}</a></td>
+          <td>${esc(c.creditorCode ?? '')}</td>
+          <td>${esc(c.debtorCode ?? '')}</td>
+          <td>${esc(c.basisDocType ?? '')}</td>
+          <td>${esc(c.basisDocNo ?? '')}</td>
+          <td>${esc(safeDate(c.basisDecidedAt) || '')}</td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderCaseSelectors() {
+      const cases = wb.cases || [];
+      const options = cases.map(c => ({ value: c.caseId, label: `${c.caseCode || ''} ${c.name || ''}`.trim() }));
+      fillSelect($('wbCaseSel'), options, $('wbCaseSel').value, true);
+      fillSelect($('attUploadCaseId'), options, $('attUploadCaseId').value, true);
+    }
+
+    function renderCreditorDebtorSelectors() {
+      const creditorOptions = (wb.creditors || []).map(c => ({ value: c.creditorId, label: `${c.srCode || ''} ${c.name || ''}`.trim() }));
+      const debtorOptions = (wb.debtors || []).map(d => ({ value: d.debtorId, label: `${d.brCode || ''} ${d.name || ''}`.trim() }));
+      fillSelect($('wbCreditorSel'), creditorOptions, $('wbCreditorSel').value, true);
+      fillSelect($('wbDebtorSel'), debtorOptions, $('wbDebtorSel').value, true);
+
+      fillSelect($('clueDebtorSel'), debtorOptions, $('clueDebtorSel').value, true);
+    }
+
+    function fillCaseBaseFromSelected() {
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        $('wbCreditorSel').value = '';
+        $('wbDebtorSel').value = '';
+        $('wbCause').value = '';
+        $('wbBasisDocType').value = '';
+        $('wbBasisDocNo').value = '';
+        $('wbBasisOrg').value = '';
+        $('wbBasisDecidedAt').value = '';
+        $('wbBasisMainText').value = '';
+        return;
+      }
+      const c = (wb.cases || []).find(x => String(x.caseId) === String(caseId));
+      if (!c) return;
+      $('wbCreditorSel').value = c.creditorId || '';
+      $('wbDebtorSel').value = c.debtorId || '';
+      $('wbCause').value = c.cause || '';
+      $('wbBasisDocType').value = c.basisDocType || '';
+      $('wbBasisDocNo').value = c.basisDocNo || '';
+      $('wbBasisOrg').value = c.basisOrg || '';
+      $('wbBasisDecidedAt').value = safeDate(c.basisDecidedAt) || '';
+      $('wbBasisMainText').value = c.basisMainText || '';
+    }
+
+    function renderProcedures() {
+      const tbody = $('procTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.procedures || [];
+      if (rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="5" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const p1 of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(p1.name ?? '')}</td>
+          <td>${esc(p1.docNo ?? '')}</td>
+          <td>${esc(p1.org ?? '')}</td>
+          <td>${esc(safeDate(p1.decidedAt) || '')}</td>
+          <td>
+            <button class="secondary" data-act="editProc" data-id="${esc(p1.procedureId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delProc" data-id="${esc(p1.procedureId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderMeasures(tableId, rows, editAct, delAct) {
+      const tbody = $(tableId).querySelector('tbody');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="5" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const m of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(m.name ?? '')}</td>
+          <td>${esc(m.target ?? '')}</td>
+          <td>${esc(safeDate(m.dueAt) || '')}</td>
+          <td>${esc(m.result ?? '')}</td>
+          <td>
+            <button class="secondary" data-act="${editAct}" data-id="${esc(m.measureId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="${delAct}" data-id="${esc(m.measureId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function renderCosts() {
+      const tbody = $('costTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.costs || [];
+      if (rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="6" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const c of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(c.category ?? '')}</td>
+          <td>${esc(c.amount ?? '')}</td>
+          <td>${esc(safeDate(c.occurredAt) || '')}</td>
+          <td>${esc(c.payer ?? '')}</td>
+          <td>${esc(c.note ?? '')}</td>
+          <td>
+            <button class="secondary" data-act="editCost" data-id="${esc(c.costId)}">${esc(t('common.edit'))}</button>
+            <button class="secondary" data-act="delCost" data-id="${esc(c.costId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    function objectTypeOptions() {
+      return [
+        { value: 'project', label: t('workbench.object.project') },
+        { value: 'case', label: t('workbench.object.case') },
+        { value: 'project_creditor', label: t('workbench.object.projectCreditor') },
+        { value: 'project_debtor', label: t('workbench.object.projectDebtor') },
+        { value: 'debtor_clue', label: t('workbench.object.debtorClue') },
+        { value: 'case_procedure', label: t('workbench.object.caseProcedure') },
+        { value: 'case_measure_control', label: t('workbench.object.caseMeasureControl') },
+        { value: 'case_measure_sanction', label: t('workbench.object.caseMeasureSanction') },
+        { value: 'case_cost', label: t('workbench.object.caseCost') }
+      ];
+    }
+
+    function computeObjectOptions(type) {
+      if (type === 'project') return [{ value: wb.project?.projectId, label: `${wb.project?.code || ''} ${wb.project?.name || ''}`.trim() }];
+      if (type === 'case') return (wb.cases || []).map(c => ({ value: c.caseId, label: `${c.caseCode || ''} ${c.name || ''}`.trim() }));
+      if (type === 'project_creditor') return (wb.creditors || []).map(c => ({ value: c.creditorId, label: `${c.srCode || ''} ${c.name || ''}`.trim() }));
+      if (type === 'project_debtor') return (wb.debtors || []).map(d => ({ value: d.debtorId, label: `${d.brCode || ''} ${d.name || ''}`.trim() }));
+      if (type === 'debtor_clue') {
+        const all = [];
+        for (const [debtorId, arr] of wb.cluesByDebtor.entries()) {
+          for (const x of arr) {
+            const debtor = (wb.debtors || []).find(d => String(d.debtorId) === String(debtorId));
+            const dn = debtor ? `${debtor.brCode || ''} ${debtor.name || ''}`.trim() : debtorId;
+            all.push({ value: x.clueId, label: `${x.xsCode || ''} ${dn}`.trim() });
+          }
+        }
+        return all;
+      }
+      if (type === 'case_procedure') return (wb.procedures || []).map(p1 => ({ value: p1.procedureId, label: `${p1.name || ''}`.trim() }));
+      if (type === 'case_measure_control') return (wb.measuresCtl || []).map(m => ({ value: m.measureId, label: `${m.name || ''}`.trim() }));
+      if (type === 'case_measure_sanction') return (wb.measuresSan || []).map(m => ({ value: m.measureId, label: `${m.name || ''}`.trim() }));
+      if (type === 'case_cost') return (wb.costs || []).map(c => ({ value: c.costId, label: `${c.category || ''} ${c.amount || ''}`.trim() }));
+      return [];
+    }
+
+    function renderAttachmentSelectors() {
+      const typeSel = $('attObjectType');
+      if (!typeSel.options.length) {
+        fillSelect(typeSel, objectTypeOptions(), typeSel.value || 'case', false);
+        if (!typeSel.value) typeSel.value = 'case';
+      }
+      const type = typeSel.value;
+      const options = computeObjectOptions(type);
+      fillSelect($('attObjectId'), options, $('attObjectId').value, false);
+    }
+
+    function renderAttachments() {
+      const tbody = $('attTbl').querySelector('tbody');
+      tbody.innerHTML = '';
+      const rows = wb.attachments || [];
+      if (!rows || rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="4" class="note">${esc(t('common.empty'))}</td>`;
+        tbody.appendChild(trEl);
+        return;
+      }
+      for (const a of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `
+          <td>${esc(a.title ?? '')}</td>
+          <td>${esc(a.fileId ?? '')}</td>
+          <td>${esc(formatDate(a.createdAt))}</td>
+          <td>
+            <button class="secondary" data-act="previewFile" data-file="${esc(a.fileId)}">${esc(t('workbench.preview'))}</button>
+            <button class="secondary" data-act="delAttachment" data-id="${esc(a.attachmentId)}">${esc(t('common.delete'))}</button>
+          </td>
+        `;
+        tbody.appendChild(trEl);
+      }
+    }
+
+    async function loadWorkbenchDetail() {
+      if (!projectId) return;
+      setMsg('creditorMsg', '');
+      setMsg('debtorMsg', '');
+      setMsg('clueMsg', '');
+      setMsg('caseBaseMsg', '');
+      setMsg('caseMsg', '');
+      setMsg('procMsg', '');
+      setMsg('ctlMeasureMsg', '');
+      setMsg('sanMeasureMsg', '');
+      setMsg('costMsg', '');
+      setMsg('attMsg', '');
+
+      let json;
+      try {
+        json = await wbFetchJson(`/workbench/projects/${encodeURIComponent(projectId)}/detail`, { method: 'GET' });
+      } catch (e) {
+        showError(`${t('common.requestFailed')}：${e?.message || e}`);
+        return;
+      }
+
+      wb.project = json?.project ?? null;
+      wb.creditors = json?.creditors ?? [];
+      wb.debtors = json?.debtors ?? [];
+      wb.cases = json?.cases ?? [];
+
+      // Prefer workbench project for base info
+      if (wb.project) {
+        $('projectBox').innerHTML = projectInfoTable(wb.project);
+      }
+
+      renderCreditors();
+      renderDebtors();
+      renderCreditorDebtorSelectors();
+      renderCaseSelectors();
+      renderWbCases();
+      fillCaseBaseFromSelected();
+      renderAttachmentSelectors();
+
+      // load clue list for current debtor selection
+      const debtorId = $('clueDebtorSel').value;
+      if (debtorId) {
+        await reloadClues(debtorId);
+      } else {
+        renderClues('');
+      }
+
+      // load case related lists
+      const caseId = $('wbCaseSel').value || (wb.cases[0]?.caseId ?? '');
+      if (caseId && !$('wbCaseSel').value) {
+        $('wbCaseSel').value = String(caseId);
+        fillCaseBaseFromSelected();
+      }
+      await reloadCaseLists(caseId);
+    }
+
+    async function reloadClues(debtorId) {
+      if (!debtorId) {
+        renderClues('');
+        return;
+      }
+      try {
+        const arr = await wbFetchJson(`/workbench/debtors/${encodeURIComponent(debtorId)}/clues`, { method: 'GET' });
+        wb.cluesByDebtor.set(String(debtorId), Array.isArray(arr) ? arr : []);
+      } catch (e) {
+        setMsg('clueMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        wb.cluesByDebtor.set(String(debtorId), []);
+      }
+      renderClues(debtorId);
+      renderAttachmentSelectors();
+    }
+
+    async function reloadCaseLists(caseId) {
+      wb.procedures = [];
+      wb.measuresCtl = [];
+      wb.measuresSan = [];
+      wb.costs = [];
+      wb.attachments = [];
+
+      renderProcedures();
+      renderMeasures('ctlMeasureTbl', wb.measuresCtl, 'editCtlMeasure', 'delCtlMeasure');
+      renderMeasures('sanMeasureTbl', wb.measuresSan, 'editSanMeasure', 'delSanMeasure');
+      renderCosts();
+      renderAttachments();
+
+      if (!caseId) {
+        renderAttachmentSelectors();
+        return;
+      }
+      try {
+        const [procs, ctl, san, costs] = await Promise.all([
+          wbFetchJson(`/workbench/cases/${encodeURIComponent(caseId)}/procedures`, { method: 'GET' }),
+          wbFetchJson(`/workbench/cases/${encodeURIComponent(caseId)}/measures/control`, { method: 'GET' }),
+          wbFetchJson(`/workbench/cases/${encodeURIComponent(caseId)}/measures/sanction`, { method: 'GET' }),
+          wbFetchJson(`/workbench/cases/${encodeURIComponent(caseId)}/costs`, { method: 'GET' })
+        ]);
+        wb.procedures = Array.isArray(procs) ? procs : [];
+        wb.measuresCtl = Array.isArray(ctl) ? ctl : [];
+        wb.measuresSan = Array.isArray(san) ? san : [];
+        wb.costs = Array.isArray(costs) ? costs : [];
+      } catch (e) {
+        setMsg('procMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+
+      renderProcedures();
+      renderMeasures('ctlMeasureTbl', wb.measuresCtl, 'editCtlMeasure', 'delCtlMeasure');
+      renderMeasures('sanMeasureTbl', wb.measuresSan, 'editSanMeasure', 'delSanMeasure');
+      renderCosts();
+      renderAttachmentSelectors();
+
+      // attachments for current object selection
+      await reloadAttachments();
+    }
+
+    async function reloadAttachments() {
+      const type = $('attObjectType').value;
+      const objectId = $('attObjectId').value;
+      if (!type || !objectId) {
+        wb.attachments = [];
+        renderAttachments();
+        return;
+      }
+      try {
+        const qs = `objectType=${encodeURIComponent(type)}&objectId=${encodeURIComponent(objectId)}`;
+        const arr = await wbFetchJson(`/workbench/attachments?${qs}`, { method: 'GET' });
+        wb.attachments = Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        setMsg('attMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        wb.attachments = [];
+      }
+      renderAttachments();
+    }
+
+    function creditorFields(isCreate) {
+      const fields = [];
+      if (isCreate) {
+        fields.push({ key: 'codeSource', label: t('workbench.codeSource'), type: 'select', required: true, options: [
+          { value: 'AUTO', label: t('workbench.codeSourceAuto') },
+          { value: 'MANUAL', label: t('workbench.codeSourceManual') }
+        ]});
+        fields.push({ key: 'manualSrCode', label: t('workbench.manualSrCode'), type: 'text', required: false });
+      }
+      fields.push({ key: 'name', label: t('workbench.partyName'), type: 'text', required: true });
+      fields.push({ key: 'idNo', label: t('workbench.idNo'), type: 'text', required: false });
+      fields.push({ key: 'unifiedCode', label: t('workbench.unifiedCode'), type: 'text', required: false });
+      fields.push({ key: 'regAddress', label: t('workbench.regAddress'), type: 'text', required: false });
+      fields.push({ key: 'eDeliveryPhone', label: t('workbench.eDeliveryPhone'), type: 'text', required: false });
+      fields.push({ key: 'mailAddress', label: t('workbench.mailAddress'), type: 'text', required: false });
+      fields.push({ key: 'mailRecipient', label: t('workbench.mailRecipient'), type: 'text', required: false });
+      fields.push({ key: 'mailPhone', label: t('workbench.mailPhone'), type: 'text', required: false });
+      fields.push({ key: 'note', label: t('workbench.note'), type: 'text', required: false });
+      return fields;
+    }
+
+    function debtorFields(isCreate) {
+      const fields = [];
+      if (isCreate) {
+        fields.push({ key: 'codeSource', label: t('workbench.codeSource'), type: 'select', required: true, options: [
+          { value: 'AUTO', label: t('workbench.codeSourceAuto') },
+          { value: 'MANUAL', label: t('workbench.codeSourceManual') }
+        ]});
+        fields.push({ key: 'manualBrCode', label: t('workbench.manualBrCode'), type: 'text', required: false });
+      }
+      fields.push({ key: 'name', label: t('workbench.partyName'), type: 'text', required: true });
+      fields.push({ key: 'idNo', label: t('workbench.idNo'), type: 'text', required: false });
+      fields.push({ key: 'unifiedCode', label: t('workbench.unifiedCode'), type: 'text', required: false });
+      fields.push({ key: 'regAddress', label: t('workbench.regAddress'), type: 'text', required: false });
+      fields.push({ key: 'eDeliveryPhone', label: t('workbench.eDeliveryPhone'), type: 'text', required: false });
+      fields.push({ key: 'mailAddress', label: t('workbench.mailAddress'), type: 'text', required: false });
+      fields.push({ key: 'mailRecipient', label: t('workbench.mailRecipient'), type: 'text', required: false });
+      fields.push({ key: 'mailPhone', label: t('workbench.mailPhone'), type: 'text', required: false });
+      fields.push({ key: 'note', label: t('workbench.note'), type: 'text', required: false });
+      return fields;
+    }
+
+    function caseFields() {
+      const creditorOptions = (wb.creditors || []).map(c => ({ value: c.creditorId, label: `${c.srCode || ''} ${c.name || ''}`.trim() }));
+      const debtorOptions = (wb.debtors || []).map(d => ({ value: d.debtorId, label: `${d.brCode || ''} ${d.name || ''}`.trim() }));
+      return [
+        { key: 'codeSource', label: t('workbench.codeSource'), type: 'select', required: true, options: [
+          { value: 'AUTO', label: t('workbench.codeSourceAuto') },
+          { value: 'MANUAL', label: t('workbench.codeSourceManual') }
+        ]},
+        { key: 'manualCaseCode', label: t('workbench.manualCaseCode'), type: 'text', required: false },
+        { key: 'creditorId', label: t('projectDetail.workbench.bindCreditor'), type: 'select', required: true, options: creditorOptions },
+        { key: 'debtorId', label: t('projectDetail.workbench.bindDebtor'), type: 'select', required: true, options: debtorOptions },
+        { key: 'cause', label: t('workbench.cause'), type: 'text', required: true },
+        { key: 'basisDocType', label: t('workbench.basisDocType'), type: 'text', required: false },
+        { key: 'basisDocNo', label: t('workbench.basisDocNo'), type: 'text', required: false },
+        { key: 'basisOrg', label: t('workbench.basisOrg'), type: 'text', required: false },
+        { key: 'basisDecidedAt', label: t('workbench.basisDecidedAt'), type: 'date', required: false },
+        { key: 'basisMainText', label: t('workbench.basisMainText'), type: 'text', required: false }
+      ];
+    }
+
+    function clueFields() {
+      return [
+        { key: 'category', label: t('workbench.clueCategory'), type: 'text', required: true },
+        { key: 'detail', label: t('workbench.clueDetail'), type: 'text', required: true },
+        { key: 'source', label: t('workbench.clueSource'), type: 'text', required: false },
+        { key: 'collectedAt', label: t('workbench.collectedAt'), type: 'date', required: false }
+      ];
+    }
+
+    function procedureFields() {
+      return [
+        { key: 'name', label: t('workbench.procName'), type: 'text', required: true },
+        { key: 'docNo', label: t('workbench.procDocNo'), type: 'text', required: false },
+        { key: 'org', label: t('workbench.procOrg'), type: 'text', required: false },
+        { key: 'decidedAt', label: t('workbench.decidedAt'), type: 'date', required: false }
+      ];
+    }
+
+    function measureFields() {
+      return [
+        { key: 'name', label: t('workbench.measureName'), type: 'text', required: true },
+        { key: 'target', label: t('workbench.measureTarget'), type: 'text', required: false },
+        { key: 'basisOrg', label: t('workbench.measureBasisOrg'), type: 'text', required: false },
+        { key: 'basisDocNo', label: t('workbench.measureBasisDocNo'), type: 'text', required: false },
+        { key: 'basisDocName', label: t('workbench.measureBasisDocName'), type: 'text', required: false },
+        { key: 'content', label: t('workbench.measureContent'), type: 'text', required: false },
+        { key: 'result', label: t('workbench.measureResult'), type: 'text', required: false },
+        { key: 'rankNo', label: t('workbench.measureRankNo'), type: 'text', required: false },
+        { key: 'dueAt', label: t('workbench.measureDueAt'), type: 'date', required: false },
+        { key: 'note', label: t('workbench.note'), type: 'text', required: false }
+      ];
+    }
+
+    function costFields() {
+      return [
+        { key: 'category', label: t('workbench.costCategory'), type: 'text', required: true },
+        { key: 'amount', label: t('workbench.costAmount'), type: 'text', required: true },
+        { key: 'occurredAt', label: t('workbench.occurredAt'), type: 'date', required: false },
+        { key: 'payer', label: t('workbench.payer'), type: 'text', required: false },
+        { key: 'note', label: t('workbench.note'), type: 'text', required: false }
+      ];
+    }
+
+    async function confirmDelete() {
+      return window.confirm(t('common.confirmDelete'));
+    }
+
+    // events
+    $('clueDebtorSel').addEventListener('change', async () => {
+      await reloadClues($('clueDebtorSel').value);
+    });
+
+    $('wbCaseSel').addEventListener('change', async () => {
+      fillCaseBaseFromSelected();
+      await reloadCaseLists($('wbCaseSel').value);
+    });
+
+    $('attObjectType').addEventListener('change', async () => {
+      renderAttachmentSelectors();
+      await reloadAttachments();
+    });
+
+    $('attObjectId').addEventListener('change', async () => {
+      await reloadAttachments();
+    });
+
+    $('attUploadCaseId').addEventListener('change', () => {
+      // no-op
+    });
+
+    $('saveCaseBaseBtn').addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        setMsg('caseBaseMsg', t('projectDetail.workbench.selectCaseHint'));
+        return;
+      }
+      setMsg('caseBaseMsg', t('common.saving'));
+      const body = {
+        creditorId: $('wbCreditorSel').value || null,
+        debtorId: $('wbDebtorSel').value || null,
+        cause: $('wbCause').value || null,
+        basisDocType: $('wbBasisDocType').value || null,
+        basisDocNo: $('wbBasisDocNo').value || null,
+        basisOrg: $('wbBasisOrg').value || null,
+        basisDecidedAt: $('wbBasisDecidedAt').value || null,
+        basisMainText: $('wbBasisMainText').value || null
+      };
+      try {
+        const res = await apiFetch(`/workbench/cases/${encodeURIComponent(caseId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          const err = parseErrorBodyText(text);
+          setMsg('caseBaseMsg', `保存失败：${err.message || text}`);
+          return;
+        }
+        setMsg('caseBaseMsg', t('common.saved'));
+        await loadWorkbenchDetail();
+      } catch (e) {
+        setMsg('caseBaseMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addCreditorBtn').addEventListener('click', async () => {
+      const v = await openFormDialog(t('projectDetail.workbench.addCreditor'), creditorFields(true), { codeSource: 'AUTO' });
+      if (!v) return;
+      setMsg('creditorMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/creditors`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codeSource: v.codeSource,
+            manualSrCode: v.manualSrCode,
+            name: v.name,
+            idNo: v.idNo,
+            unifiedCode: v.unifiedCode,
+            regAddress: v.regAddress,
+            eDeliveryPhone: v.eDeliveryPhone,
+            mailAddress: v.mailAddress,
+            mailRecipient: v.mailRecipient,
+            mailPhone: v.mailPhone,
+            note: v.note
+          })
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('creditorMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('creditorMsg', t('common.saved'));
+        await loadWorkbenchDetail();
+      } catch (e) {
+        setMsg('creditorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addDebtorBtn').addEventListener('click', async () => {
+      const v = await openFormDialog(t('projectDetail.workbench.addDebtor'), debtorFields(true), { codeSource: 'AUTO' });
+      if (!v) return;
+      setMsg('debtorMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/debtors`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codeSource: v.codeSource,
+            manualBrCode: v.manualBrCode,
+            name: v.name,
+            idNo: v.idNo,
+            unifiedCode: v.unifiedCode,
+            regAddress: v.regAddress,
+            eDeliveryPhone: v.eDeliveryPhone,
+            mailAddress: v.mailAddress,
+            mailRecipient: v.mailRecipient,
+            mailPhone: v.mailPhone,
+            note: v.note
+          })
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('debtorMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('debtorMsg', t('common.saved'));
+        await loadWorkbenchDetail();
+      } catch (e) {
+        setMsg('debtorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addClueBtn').addEventListener('click', async () => {
+      const debtorId = $('clueDebtorSel').value;
+      if (!debtorId) {
+        setMsg('clueMsg', t('projectDetail.workbench.selectDebtorHint'));
+        return;
+      }
+      const v = await openFormDialog(t('projectDetail.workbench.addClue'), clueFields(), {});
+      if (!v) return;
+      setMsg('clueMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(debtorId)}/clues`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: v.category,
+            detail: v.detail,
+            source: v.source,
+            collectedAt: v.collectedAt
+          })
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('clueMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('clueMsg', t('common.saved'));
+        await reloadClues(debtorId);
+      } catch (e) {
+        setMsg('clueMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addCaseBtn').addEventListener('click', async () => {
+      const v = await openFormDialog(t('projectDetail.workbench.addCase'), caseFields(), { codeSource: 'AUTO' });
+      if (!v) return;
+      setMsg('caseMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/projects/${encodeURIComponent(projectId)}/cases`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codeSource: v.codeSource,
+            manualCaseCode: v.manualCaseCode,
+            creditorId: v.creditorId,
+            debtorId: v.debtorId,
+            cause: v.cause,
+            basisDocType: v.basisDocType,
+            basisDocNo: v.basisDocNo,
+            basisOrg: v.basisOrg,
+            basisDecidedAt: v.basisDecidedAt,
+            basisMainText: v.basisMainText
+          })
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('caseMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        let newId = '';
+        try {
+          const json = text ? JSON.parse(text) : null;
+          newId = json?.id ?? '';
+        } catch {
+          // ignore
+        }
+        setMsg('caseMsg', t('common.saved'));
+        await loadWorkbenchDetail();
+        if (newId) {
+          $('wbCaseSel').value = String(newId);
+          fillCaseBaseFromSelected();
+          await reloadCaseLists(String(newId));
+        }
+      } catch (e) {
+        setMsg('caseMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addProcBtn').addEventListener('click', async () => {
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        setMsg('procMsg', t('projectDetail.workbench.selectCaseHint'));
+        return;
+      }
+      const v = await openFormDialog(t('projectDetail.workbench.addProcedure'), procedureFields(), {});
+      if (!v) return;
+      setMsg('procMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/cases/${encodeURIComponent(caseId)}/procedures`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: v.name, docNo: v.docNo, org: v.org, decidedAt: v.decidedAt })
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('procMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('procMsg', t('common.saved'));
+        await reloadCaseLists(caseId);
+      } catch (e) {
+        setMsg('procMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addCtlMeasureBtn').addEventListener('click', async () => {
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        setMsg('ctlMeasureMsg', t('projectDetail.workbench.selectCaseHint'));
+        return;
+      }
+      const v = await openFormDialog(t('projectDetail.workbench.addControlMeasure'), measureFields(), {});
+      if (!v) return;
+      setMsg('ctlMeasureMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/cases/${encodeURIComponent(caseId)}/measures/control`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(v)
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('ctlMeasureMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('ctlMeasureMsg', t('common.saved'));
+        await reloadCaseLists(caseId);
+      } catch (e) {
+        setMsg('ctlMeasureMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addSanMeasureBtn').addEventListener('click', async () => {
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        setMsg('sanMeasureMsg', t('projectDetail.workbench.selectCaseHint'));
+        return;
+      }
+      const v = await openFormDialog(t('projectDetail.workbench.addSanctionMeasure'), measureFields(), {});
+      if (!v) return;
+      setMsg('sanMeasureMsg', t('common.saving'));
+      try {
+        const res = await apiFetch(`/workbench/cases/${encodeURIComponent(caseId)}/measures/sanction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(v)
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('sanMeasureMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('sanMeasureMsg', t('common.saved'));
+        await reloadCaseLists(caseId);
+      } catch (e) {
+        setMsg('sanMeasureMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('addCostBtn').addEventListener('click', async () => {
+      const caseId = $('wbCaseSel').value;
+      if (!caseId) {
+        setMsg('costMsg', t('projectDetail.workbench.selectCaseHint'));
+        return;
+      }
+      const v = await openFormDialog(t('projectDetail.workbench.addCost'), costFields(), {});
+      if (!v) return;
+      setMsg('costMsg', t('common.saving'));
+      const body = {
+        category: v.category,
+        amount: v.amount,
+        occurredAt: v.occurredAt,
+        payer: v.payer,
+        note: v.note
+      };
+      try {
+        const res = await apiFetch(`/workbench/cases/${encodeURIComponent(caseId)}/costs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          setMsg('costMsg', `新增失败：${err.message || text}`);
+          return;
+        }
+        setMsg('costMsg', t('common.saved'));
+        await reloadCaseLists(caseId);
+      } catch (e) {
+        setMsg('costMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    $('attUploadBtn').addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const objectType = $('attObjectType').value;
+      const objectId = $('attObjectId').value;
+      const uploadCaseId = $('attUploadCaseId').value;
+      const fileEl = $('attFile');
+      const file = fileEl.files && fileEl.files[0];
+      if (!objectType || !objectId) {
+        setMsg('attMsg', t('workbench.attachment.needObject'));
+        return;
+      }
+      if (!uploadCaseId) {
+        setMsg('attMsg', t('workbench.attachment.needUploadCase'));
+        return;
+      }
+      if (!file) {
+        setMsg('attMsg', t('workbench.attachment.needFile'));
+        return;
+      }
+      setMsg('attMsg', t('workbench.attachment.uploading'));
+
+      try {
+        // 1) init
+        const initResp = await wbFetchJson('/files/upload-init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            caseId: uploadCaseId,
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            sizeBytes: file.size
+          })
+        });
+        // 2) put to presigned
+        const putRes = await fetch(initResp.presignedPutUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type || 'application/octet-stream' },
+          body: file
+        });
+        if (!putRes.ok) {
+          setMsg('attMsg', `上传失败（HTTP ${putRes.status}）。`);
+          return;
+        }
+        // 3) complete
+        const completeRes = await wbFetchJson('/files/upload-complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileId: initResp.fileId,
+            caseId: uploadCaseId,
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            sizeBytes: file.size,
+            sha256: null,
+            s3KeyRaw: initResp.s3KeyRaw
+          })
+        });
+
+        // 4) link
+        const title = $('attTitle').value || null;
+        const linkRes = await apiFetch('/workbench/attachments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            objectType,
+            objectId,
+            fileId: completeRes.fileId,
+            title: title || file.name
+          })
+        });
+        const linkText = await linkRes.text();
+        if (!linkRes.ok) {
+          const err = parseErrorBodyText(linkText);
+          setMsg('attMsg', `绑定失败：${err.message || linkText}`);
+          return;
+        }
+        setMsg('attMsg', t('common.saved'));
+        fileEl.value = '';
+        await reloadAttachments();
+      } catch (e) {
+        setMsg('attMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    });
+
+    async function previewFile(fileId) {
+      setMsg('attMsg', t('workbench.previewing'));
+      try {
+        const tokenResp = await wbFetchJson(`/preview/files/${encodeURIComponent(fileId)}/tokens`, { method: 'POST' });
+        const res = await apiFetch(`/preview/view?token=${encodeURIComponent(tokenResp.token)}`, { method: 'GET' });
+        if (!res.ok) {
+          const text = await res.text();
+          const err = parseErrorBodyText(text);
+          setMsg('attMsg', `预览失败：${err.message || text}`);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        setMsg('attMsg', '');
+      } catch (e) {
+        setMsg('attMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+      }
+    }
+
+    document.addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest('button[data-act]');
+      if (!btn) return;
+      const act = btn.getAttribute('data-act');
+      const id = btn.getAttribute('data-id');
+      const fileId = btn.getAttribute('data-file');
+      const debtorId = btn.getAttribute('data-debtor');
+
+      if (act === 'previewFile') {
+        await previewFile(fileId);
+        return;
+      }
+
+      if (act === 'delAttachment') {
+        if (!(await confirmDelete())) return;
+        setMsg('attMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/attachments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          if (!res.ok) {
+            const text = await res.text();
+            const err = parseErrorBodyText(text);
+            setMsg('attMsg', `解绑失败：${err.message || text}`);
+            return;
+          }
+          setMsg('attMsg', t('common.saved'));
+          await reloadAttachments();
+        } catch (e) {
+          setMsg('attMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editCreditor') {
+        const c = wb.creditors.find(x => String(x.creditorId) === String(id));
+        if (!c) return;
+        const v = await openFormDialog(t('common.edit'), creditorFields(false), c);
+        if (!v) return;
+        setMsg('creditorMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/creditors/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(v)
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('creditorMsg', `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg('creditorMsg', t('common.saved'));
+          await loadWorkbenchDetail();
+        } catch (e) {
+          setMsg('creditorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delCreditor') {
+        if (!(await confirmDelete())) return;
+        setMsg('creditorMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/creditors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('creditorMsg', `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg('creditorMsg', t('common.saved'));
+          await loadWorkbenchDetail();
+        } catch (e) {
+          setMsg('creditorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editDebtor') {
+        const d = wb.debtors.find(x => String(x.debtorId) === String(id));
+        if (!d) return;
+        const v = await openFormDialog(t('common.edit'), debtorFields(false), d);
+        if (!v) return;
+        setMsg('debtorMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(v)
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('debtorMsg', `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg('debtorMsg', t('common.saved'));
+          await loadWorkbenchDetail();
+        } catch (e) {
+          setMsg('debtorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delDebtor') {
+        if (!(await confirmDelete())) return;
+        setMsg('debtorMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/debtors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('debtorMsg', `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg('debtorMsg', t('common.saved'));
+          await loadWorkbenchDetail();
+        } catch (e) {
+          setMsg('debtorMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editClue') {
+        const arr = wb.cluesByDebtor.get(String(debtorId)) || [];
+        const x = arr.find(i => String(i.clueId) === String(id));
+        if (!x) return;
+        const v = await openFormDialog(t('common.edit'), clueFields(), {
+          category: x.category,
+          detail: x.detail,
+          source: x.source,
+          collectedAt: x.collectedAt
+        });
+        if (!v) return;
+        setMsg('clueMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/clues/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: v.category, detail: v.detail, source: v.source, collectedAt: v.collectedAt })
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('clueMsg', `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg('clueMsg', t('common.saved'));
+          await reloadClues(debtorId);
+        } catch (e) {
+          setMsg('clueMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delClue') {
+        if (!(await confirmDelete())) return;
+        setMsg('clueMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/clues/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('clueMsg', `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg('clueMsg', t('common.saved'));
+          await reloadClues(debtorId);
+        } catch (e) {
+          setMsg('clueMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editProc') {
+        const p1 = wb.procedures.find(x => String(x.procedureId) === String(id));
+        if (!p1) return;
+        const v = await openFormDialog(t('common.edit'), procedureFields(), p1);
+        if (!v) return;
+        setMsg('procMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/procedures/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(v)
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('procMsg', `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg('procMsg', t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg('procMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delProc') {
+        if (!(await confirmDelete())) return;
+        setMsg('procMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/procedures/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('procMsg', `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg('procMsg', t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg('procMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editCtlMeasure' || act === 'editSanMeasure') {
+        const rows = act === 'editCtlMeasure' ? wb.measuresCtl : wb.measuresSan;
+        const m = rows.find(x => String(x.measureId) === String(id));
+        if (!m) return;
+        const v = await openFormDialog(t('common.edit'), measureFields(), m);
+        if (!v) return;
+        const msgId = act === 'editCtlMeasure' ? 'ctlMeasureMsg' : 'sanMeasureMsg';
+        setMsg(msgId, t('common.saving'));
+        const path = act === 'editCtlMeasure' ? `/workbench/measures/control/${encodeURIComponent(id)}` : `/workbench/measures/sanction/${encodeURIComponent(id)}`;
+        try {
+          const res = await apiFetch(path, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(v)
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg(msgId, `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg(msgId, t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg(msgId, `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delCtlMeasure' || act === 'delSanMeasure') {
+        if (!(await confirmDelete())) return;
+        const msgId = act === 'delCtlMeasure' ? 'ctlMeasureMsg' : 'sanMeasureMsg';
+        setMsg(msgId, t('common.saving'));
+        const path = act === 'delCtlMeasure' ? `/workbench/measures/control/${encodeURIComponent(id)}` : `/workbench/measures/sanction/${encodeURIComponent(id)}`;
+        try {
+          const res = await apiFetch(path, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg(msgId, `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg(msgId, t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg(msgId, `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'editCost') {
+        const c = wb.costs.find(x => String(x.costId) === String(id));
+        if (!c) return;
+        const v = await openFormDialog(t('common.edit'), costFields(), {
+          category: c.category,
+          amount: c.amount,
+          occurredAt: c.occurredAt,
+          payer: c.payer,
+          note: c.note
+        });
+        if (!v) return;
+        setMsg('costMsg', t('common.saving'));
+        const body = {
+          category: v.category,
+          amount: v.amount,
+          occurredAt: v.occurredAt,
+          payer: v.payer,
+          note: v.note
+        };
+        try {
+          const res = await apiFetch(`/workbench/costs/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('costMsg', `保存失败：${err.message || text}`);
+            return;
+          }
+          setMsg('costMsg', t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg('costMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+
+      if (act === 'delCost') {
+        if (!(await confirmDelete())) return;
+        setMsg('costMsg', t('common.saving'));
+        try {
+          const res = await apiFetch(`/workbench/costs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+          const text = await res.text();
+          if (!res.ok) {
+            const err = parseErrorBodyText(text);
+            setMsg('costMsg', `删除失败：${err.message || text}`);
+            return;
+          }
+          setMsg('costMsg', t('common.saved'));
+          await reloadCaseLists($('wbCaseSel').value);
+        } catch (e) {
+          setMsg('costMsg', `${t('common.requestFailed')}：${e?.message || e}`);
+        }
+        return;
+      }
+    });
 
     async function fetchPdfBlob() {
       if (!projectId) {
@@ -278,6 +2075,7 @@
 
     await initUiI18n();
     applyI18n(document);
+    await loadWorkbenchDetail();
     loadDetail();
   </script>
 </body>

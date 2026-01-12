@@ -101,7 +101,7 @@
 
       const phone = $('phone').value.trim();
       if (!phone) {
-        showError('请输入手机号');
+        showError(t('login.needPhone'));
         return;
       }
 
@@ -116,12 +116,12 @@
         const text = await res.text();
         if (!res.ok) {
           const err = parseErrorBodyText(text);
-          showError(`发送失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          showError(`${t('login.sendFailed', { status: res.status })}：${err.message || text}`, err.debug || text);
           return;
         }
         sendStatus.textContent = t('login.sendOk');
       } catch (e) {
-        showError(`发送异常：${e?.message || e}`);
+        showError(`${t('login.sendException')}：${e?.message || e}`);
       } finally {
         $('sendBtn').disabled = false;
       }
@@ -133,11 +133,11 @@
       const phone = $('phone').value.trim();
       const code = $('code').value.trim();
       if (!phone) {
-        showError('请输入手机号');
+        showError(t('login.needPhone'));
         return;
       }
       if (!code) {
-        showError('请输入验证码');
+        showError(t('login.needCode'));
         return;
       }
 
@@ -152,7 +152,7 @@
         const text = await res.text();
         if (!res.ok) {
           const err = parseErrorBodyText(text);
-          showError(`登录失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          showError(`${t('login.loginFailed', { status: res.status })}：${err.message || text}`, err.debug || text);
           return;
         }
 
@@ -160,19 +160,19 @@
         try {
           json = JSON.parse(text);
         } catch {
-          showError(`登录返回不是 JSON：${text}`);
+          showError(`${t('login.loginResponseNotJson')}：${text}`);
           return;
         }
 
         if (!json.token) {
-          showError('登录成功但未返回令牌');
+          showError(t('login.loginOkButNoToken'));
           return;
         }
 
         setToken(json.token);
         window.location.replace('/ui/projects.html');
       } catch (e) {
-        showError(`登录异常：${e?.message || e}`);
+        showError(`${t('login.loginException')}：${e?.message || e}`);
       } finally {
         $('loginBtn').disabled = false;
       }
@@ -184,11 +184,11 @@
       const username = $('username').value.trim();
       const password = $('password').value;
       if (!username) {
-        showError('请输入用户名或手机号');
+        showError(t('login.needUsername'));
         return;
       }
       if (!password) {
-        showError('请输入密码');
+        showError(t('login.needPassword'));
         return;
       }
 
@@ -203,7 +203,7 @@
         const text = await res.text();
         if (!res.ok) {
           const err = parseErrorBodyText(text);
-          showError(`登录失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          showError(`${t('login.loginFailed', { status: res.status })}：${err.message || text}`, err.debug || text);
           return;
         }
 
@@ -211,19 +211,19 @@
         try {
           json = JSON.parse(text);
         } catch {
-          showError(`登录返回不是 JSON：${text}`);
+          showError(`${t('login.loginResponseNotJson')}：${text}`);
           return;
         }
 
         if (!json.token) {
-          showError('登录成功但未返回令牌');
+          showError(t('login.loginOkButNoToken'));
           return;
         }
 
         setToken(json.token);
         window.location.replace('/ui/projects.html');
       } catch (e) {
-        showError(`登录异常：${e?.message || e}`);
+        showError(`${t('login.loginException')}：${e?.message || e}`);
       } finally {
         $('pwdLoginBtn').disabled = false;
       }
@@ -237,12 +237,12 @@
     $('pwdLoginBtn').addEventListener('click', passwordLogin);
     $('clearBtn').addEventListener('click', () => {
       clearToken();
-      showError('已清除本地令牌');
+      showError(t('common.tokenCleared'));
     });
 
     $('clearBtn2').addEventListener('click', () => {
       clearToken();
-      showError('已清除本地令牌');
+      showError(t('common.tokenCleared'));
     });
 
     await initUiI18n();

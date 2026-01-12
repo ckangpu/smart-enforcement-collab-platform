@@ -189,15 +189,22 @@ $GroupId = "11111111-1111-1111-1111-111111111111"
 
 1) 创建项目 `POST /admin/projects`：
 
+> 编号与受理日期：
+> - `acceptedAt`：受理日期（`YYYY-MM-DD`）。用于确定业务编号中的 `YYYYMM`。
+> - `codeSource`：编号来源，`AUTO` 自动生成，`MANUAL` 手动指定。
+> - `code`：手动编号（仅 `codeSource=MANUAL` 时传）。格式：`^[A-Z]{1,8}\d{6}\d{4}$`。
+> - 编号冲突：HTTP 409，中文提示“编号已存在，请更换。”
+> - 编号格式不合法：HTTP 422，中文提示“编号格式不正确。”
+
 ```powershell
-$Resp = curl.exe -sS -X POST "$Base/admin/projects" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"groupId\":\"$GroupId\",\"name\":\"Quickstart 项目\",\"bizTags\":[\"quickstart\"]}"
+$Resp = curl.exe -sS -X POST "$Base/admin/projects" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"groupId\":\"$GroupId\",\"name\":\"Quickstart 项目\",\"bizTags\":[\"quickstart\"],\"acceptedAt\":\"2026-01-01\",\"codeSource\":\"AUTO\"}"
 $ProjectId = ($Resp | ConvertFrom-Json).projectId
 ```
 
 2) 创建案件 `POST /admin/cases`（groupId 会继承 project.group_id）：
 
 ```powershell
-$Resp = curl.exe -sS -X POST "$Base/admin/cases" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"projectId\":\"$ProjectId\",\"title\":\"Quickstart 案件\"}"
+$Resp = curl.exe -sS -X POST "$Base/admin/cases" -H "Authorization: Bearer $InternalToken" -H "Content-Type: $Json" -d "{\"projectId\":\"$ProjectId\",\"title\":\"Quickstart 案件\",\"acceptedAt\":\"2026-01-01\",\"codeSource\":\"AUTO\"}"
 $CaseId = ($Resp | ConvertFrom-Json).caseId
 ```
 
@@ -230,6 +237,30 @@ PowerShell 单行示例（保存到本地文件）：
 
 ```powershell
 curl.exe -sS -H "Authorization: Bearer $InternalToken" -o "project_$ProjectId.pdf" "$Base/projects/$ProjectId/a4.pdf"
+```
+
+### 4.0.3 案件详情 `GET /cases/{caseId}/detail`
+
+说明：该接口为 **internal-only**。不可见统一返回 404。
+
+PowerShell 单行示例：
+
+```powershell
+curl.exe -sS -H "Authorization: Bearer $InternalToken" "$Base/cases/$CaseId/detail"
+```
+
+### 4.0.4 案件 A4 PDF 打印导出 `GET /cases/{caseId}/a4.pdf`
+
+返回：
+- `Content-Type: application/pdf`
+- `Content-Disposition: inline; filename=Case_<caseId>.pdf`
+
+说明：导出会写入审计日志（`audit_log.action=case_a4_export`）。
+
+PowerShell 单行示例（保存到本地文件）：
+
+```powershell
+curl.exe -sS -H "Authorization: Bearer $InternalToken" -o "case_$CaseId.pdf" "$Base/cases/$CaseId/a4.pdf"
 ```
 
 ### 4.1 创建指令（草稿） `POST /instructions`

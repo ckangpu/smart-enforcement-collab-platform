@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>案件详情 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="nav">
+    <a href="/ui/projects.html" data-i18n-key="common.projects">我的项目</a>
+    <a href="/ui/tasks.html" data-i18n-key="common.tasks">我的任务</a>
+    <div class="spacer"></div>
+    <button id="logoutBtn" class="secondary" data-i18n-key="common.logout">退出登录</button>
+  </div>
+
+  <div class="container">
+    <h1 data-i18n-key="caseDetail.title">案件详情</h1>
+
+    <div class="actions">
+      <button id="exportBtn" data-i18n-key="caseDetail.export">导出 A4 PDF（下载）</button>
+      <button id="openBtn" class="secondary" data-i18n-key="caseDetail.openPdf">在新标签页打开 PDF</button>
+      <span id="exportStatus" class="note"></span>
+    </div>
+
+    <div id="error" class="alert" style="display:none"></div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.base">1) 案件基础信息</h2>
+      <div class="card" id="caseBox"></div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.project">2) 所属项目</h2>
+      <div class="card" id="projectBox"></div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.members">3) 成员</h2>
+      <div class="card">
+        <table class="table" id="membersTbl"><thead><tr><th data-i18n-key="table.userId">用户ID</th><th data-i18n-key="table.role">角色</th><th data-i18n-key="table.username">用户名</th><th data-i18n-key="table.phone">手机号</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.tasks">4) 任务列表</h2>
+      <div class="card">
+        <table class="table" id="tasksTbl"><thead><tr><th data-i18n-key="table.taskId">任务ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.priority">优先级</th><th data-i18n-key="tasks.table.dueAt">截止时间</th><th data-i18n-key="table.assigneeUserId">负责人用户ID</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.instructions">5) 指令汇总</h2>
+      <div class="card">
+        <table class="table" id="insTbl"><thead><tr><th data-i18n-key="table.instructionId">指令ID</th><th data-i18n-key="tasks.table.title">标题</th><th data-i18n-key="tasks.table.status">状态</th><th data-i18n-key="table.version">版本</th><th data-i18n-key="table.deadline">截止时间</th><th data-i18n-key="table.issuedAt">下发时间</th><th data-i18n-key="table.itemTotal">总项数</th><th data-i18n-key="table.itemDone">已完成项数</th><th data-i18n-key="table.itemOverdue">超期项数</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 data-i18n-key="caseDetail.section.payments">6) 回款汇总</h2>
+      <div class="card" id="payBox"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, clearToken, apiFetch, formatDate, maskPhone, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $('error');
+    const exportStatus = $('exportStatus');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function logout() {
+      clearToken();
+      window.location.replace('/ui/login.html?reason=logout');
+    }
+
+    $('logoutBtn').addEventListener('click', logout);
+
+    const caseId = new URLSearchParams(window.location.search).get('caseId');
+    if (!caseId) {
+      showError(t('caseDetail.missingCaseId'));
+    }
+
+    function esc(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function tr(label, value) {
+      return `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`;
+    }
+
+    function infoTable(rows) {
+      return `<table class="table"><tbody>${rows.join('')}</tbody></table>`;
+    }
+
+    function fillTable(tbodyEl, rows, cols) {
+      tbodyEl.innerHTML = '';
+
+      if (!rows || rows.length === 0) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = `<td colspan="${cols.length}" class="note">${esc(t('common.empty'))}</td>`;
+        tbodyEl.appendChild(trEl);
+        return;
+      }
+
+      for (const r of rows) {
+        const trEl = document.createElement('tr');
+        trEl.innerHTML = cols.map(c => `<td>${esc(c(r))}</td>`).join('');
+        tbodyEl.appendChild(trEl);
+      }
+    }
+
+    function paymentsTable(pay) {
+      if (!pay || typeof pay !== 'object') return `<div class="note">${esc(t('common.empty'))}</div>`;
+
+      const rows = [
+        tr(t('payments.sumAll'), pay.sumAll ?? '0'),
+        tr(t('payments.sum30d'), pay.sum30d ?? '0'),
+        tr(t('payments.effectiveCount'), pay.effectiveCount ?? '0'),
+        tr(t('payments.latestPaidAt'), formatDate(pay.latestPaidAt))
+      ];
+
+      return infoTable(rows);
+    }
+
+    async function loadDetail() {
+      if (!caseId) return;
+      showError('');
+
+      let res;
+      try {
+        res = await apiFetch(`/cases/${encodeURIComponent(caseId)}/detail`, { method: 'GET' });
+      } catch {
+        return;
+      }
+
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        showError(`加载失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        return;
+      }
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        showError(`${t('common.responseNotJson')}：${text}`, text);
+        return;
+      }
+
+      const c = json?.caze ?? null;
+      const p = json?.project ?? null;
+
+      $('caseBox').innerHTML = infoTable([
+        tr(t('table.caseCode'), c?.code ?? ''),
+        tr(t('table.caseId'), c?.caseId ?? ''),
+        tr(t('table.acceptedAt'), c?.acceptedAt ?? ''),
+        tr(t('table.caseTitle'), c?.title ?? ''),
+        tr(t('tasks.table.status'), c?.status ?? ''),
+        tr(t('table.groupId'), c?.groupId ?? ''),
+        tr(t('table.projectId'), c?.projectId ?? ''),
+        tr(t('table.createdAt'), formatDate(c?.createdAt)),
+        tr(t('table.updatedAt'), formatDate(c?.updatedAt))
+      ]);
+
+      $('projectBox').innerHTML = infoTable([
+        tr(t('projects.table.projectCode'), p?.code ?? ''),
+        tr(t('table.projectId'), p?.projectId ?? ''),
+        tr(t('projects.table.name'), p?.name ?? '')
+      ]);
+
+      const members = json?.members ?? [];
+      fillTable($('membersTbl').querySelector('tbody'), members, [
+        (m) => m.userId,
+        (m) => m.role,
+        (m) => m.username,
+        (m) => maskPhone(m.phoneMasked ?? m.phone)
+      ]);
+
+      const tasks = json?.tasks ?? [];
+      fillTable($('tasksTbl').querySelector('tbody'), tasks, [
+        (t1) => t1.taskId,
+        (t1) => t1.title,
+        (t1) => t1.status,
+        (t1) => t1.priority,
+        (t1) => formatDate(t1.dueAt),
+        (t1) => t1.assigneeUserId
+      ]);
+
+      const ins = json?.instructions ?? [];
+      fillTable($('insTbl').querySelector('tbody'), ins, [
+        (i) => i.instructionId,
+        (i) => i.title,
+        (i) => i.status,
+        (i) => i.version,
+        (i) => formatDate(i.deadline),
+        (i) => formatDate(i.issuedAt),
+        (i) => i.itemTotal,
+        (i) => i.itemDone,
+        (i) => i.itemOverdue
+      ]);
+
+      $('payBox').innerHTML = paymentsTable(json.payments);
+    }
+
+    async function fetchPdfBlob() {
+      if (!caseId) {
+        showError(t('caseDetail.missingCaseId'));
+        return null;
+      }
+
+      exportStatus.textContent = t('caseDetail.exporting');
+      showError('');
+
+      let res;
+      try {
+        res = await apiFetch(`/cases/${encodeURIComponent(caseId)}/a4.pdf`, { method: 'GET' });
+      } catch {
+        exportStatus.textContent = '';
+        return null;
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        const err = parseErrorBodyText(text);
+        showError(`导出失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        exportStatus.textContent = '';
+        return null;
+      }
+
+      const blob = await res.blob();
+      exportStatus.textContent = '';
+      return blob;
+    }
+
+    $('exportBtn').addEventListener('click', async () => {
+      const blob = await fetchPdfBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `case_${caseId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
+    $('openBtn').addEventListener('click', async () => {
+      const blob = await fetchPdfBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    });
+
+    await initUiI18n();
+    applyI18n(document);
+    loadDetail();
+  </script>
+</body>
+</html>

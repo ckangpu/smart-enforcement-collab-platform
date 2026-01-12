@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理工具 - 执行律师工作台</title>
+  <link rel="stylesheet" href="/ui/app.css" />
+</head>
+<body>
+  <div class="nav">
+    <a href="/ui/projects.html" data-i18n-key="common.projects">我的项目</a>
+    <a href="/ui/tasks.html" data-i18n-key="common.tasks">我的任务</a>
+    <a class="active" href="/ui/admin.html">管理工具</a>
+    <div class="spacer"></div>
+    <button id="logoutBtn" class="secondary" data-i18n-key="common.logout">退出登录</button>
+  </div>
+
+  <div class="container">
+    <h1>管理工具</h1>
+    <div id="error" class="alert" style="display:none"></div>
+
+    <div class="card">
+      <h2 style="font-size: 15px; margin: 0 0 10px 0">为内部账号设置密码</h2>
+
+      <div class="note" style="margin-bottom: 10px">
+        说明：仅管理员可用；更改密码会写入审计与 outbox。
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="userId">用户ID</label>
+          <input id="userId" type="text" placeholder="例如：2d9f...（UUID）" />
+        </div>
+
+        <div class="field">
+          <label for="newPassword">新密码</label>
+          <input id="newPassword" type="password" placeholder="请输入新密码" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="submitBtn">设置密码</button>
+        <span id="status" class="note"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initUiI18n, applyI18n, t, clearToken, apiFetch, renderError, parseErrorBodyText } from '/ui/app.js';
+
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $('error');
+    const statusEl = $('status');
+
+    function showError(msg, debug) {
+      renderError(errorEl, msg, debug);
+    }
+
+    function logout() {
+      clearToken();
+      window.location.replace('/ui/login.html?reason=logout');
+    }
+
+    $('logoutBtn').addEventListener('click', logout);
+
+    async function submit() {
+      showError('');
+      statusEl.textContent = '';
+
+      const userId = $('userId').value.trim();
+      const password = $('newPassword').value;
+
+      if (!userId) {
+        showError('请输入用户ID');
+        return;
+      }
+      if (!password) {
+        showError('请输入新密码');
+        return;
+      }
+
+      $('submitBtn').disabled = true;
+      try {
+        const res = await apiFetch(`/admin/users/${encodeURIComponent(userId)}/password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const text = await res.text();
+        if (!res.ok) {
+          const err = parseErrorBodyText(text);
+          showError(`设置失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+          return;
+        }
+
+        statusEl.textContent = '已设置。';
+        $('newPassword').value = '';
+      } catch (e) {
+        // apiFetch 会处理 401/403 跳转
+        if (e?.message === 'UNAUTHORIZED' || e?.message === 'FORBIDDEN') return;
+        showError(`${t('common.requestFailed')}：${e?.message || e}`);
+      } finally {
+        $('submitBtn').disabled = false;
+      }
+    }
+
+    $('submitBtn').addEventListener('click', submit);
+
+    await initUiI18n();
+    applyI18n(document);
+  </script>
+</body>
+</html>

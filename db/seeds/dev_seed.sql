@@ -53,11 +53,13 @@ ON CONFLICT (user_id, group_id) DO UPDATE
 SET role_code = EXCLUDED.role_code;
 
 -- 5) project (bind group + customer)
-INSERT INTO project (id, group_id, customer_id, name, status, created_by, created_at, updated_at)
+INSERT INTO project (id, group_id, customer_id, code, accepted_at, name, status, created_by, created_at, updated_at)
 VALUES (
   '33333333-3333-3333-3333-333333333333'::uuid,
   '11111111-1111-1111-1111-111111111111'::uuid,
   '22222222-2222-2222-2222-222222222222'::uuid,
+  'X2026010001',
+  '2026-01-01'::date,
   '示例项目 Quickstart',
   'ACTIVE',
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid,
@@ -79,11 +81,13 @@ VALUES
 ON CONFLICT (project_id, user_id) DO NOTHING;
 
 -- 6) case (bind project + group)
-INSERT INTO "case" (id, group_id, project_id, title, status, created_by, created_at, updated_at)
+INSERT INTO "case" (id, group_id, project_id, code, accepted_at, title, status, created_by, created_at, updated_at)
 VALUES (
   '44444444-4444-4444-4444-444444444444'::uuid,
   '11111111-1111-1111-1111-111111111111'::uuid,
   '33333333-3333-3333-3333-333333333333'::uuid,
+  'A2026010001',
+  '2026-01-01'::date,
   '示例案件 Quickstart',
   'OPEN',
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid,

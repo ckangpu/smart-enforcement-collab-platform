@@ -21,13 +21,42 @@
 
     <div class="card">
       <div class="note" data-i18n-key="projects.tip">提示：PowerShell 的 curl 是别名（Invoke-WebRequest），命令行请使用 curl.exe。</div>
+
+      <div class="actions" style="margin-top:10px">
+        <button id="createBtn" data-i18n-key="projects.create">新增项目</button>
+        <span class="note" data-i18n-key="projects.createHint">说明：项目编号支持自动生成或手动填写。</span>
+      </div>
+
+      <div class="row" style="margin-top: 10px">
+        <div class="field">
+          <label for="q" data-i18n-key="projects.searchLabel">搜索（项目名称/项目ID）</label>
+          <input id="q" type="text" data-i18n-placeholder="projects.searchPlaceholder" placeholder="输入关键字" />
+        </div>
+
+        <div class="field">
+          <label for="status" data-i18n-key="projects.filterStatus">状态筛选（前端过滤）</label>
+          <select id="status">
+            <option value="" data-i18n-key="common.all">全部</option>
+          </select>
+        </div>
+      </div>
+
       <table class="table" id="tbl">
         <thead>
           <tr>
+            <th data-i18n-key="projects.table.projectCode">项目编号</th>
             <th data-i18n-key="projects.table.projectId">项目ID</th>
             <th data-i18n-key="projects.table.name">项目名称</th>
+            <th data-i18n-key="projects.table.entrustor">委托人</th>
+            <th data-i18n-key="projects.table.progressStatus">进度状态</th>
+            <th data-i18n-key="projects.table.targetDate">目标日期</th>
+            <th data-i18n-key="projects.table.owner">负责人</th>
+            <th data-i18n-key="projects.table.lead">主办</th>
+            <th data-i18n-key="projects.table.assist">协办</th>
             <th data-i18n-key="projects.table.status">状态</th>
-            <th data-i18n-key="projects.table.createdAt">创建时间</th>
+            <th data-i18n-key="projects.table.acceptedAt">立项时间</th>
+            <th data-i18n-key="projects.table.updatedAt">更新时间</th>
+            <th data-i18n-key="projects.table.latestCase">最新案件</th>
             <th data-i18n-key="common.operation">操作</th>
           </tr>
         </thead>
@@ -35,6 +64,91 @@
       </table>
     </div>
   </div>
+
+  <dialog id="dlg" style="padding: 0; border: 1px solid #ddd; border-radius: 10px; width: min(900px, 96vw)">
+    <form method="dialog" style="margin:0">
+      <div style="padding: 14px; border-bottom: 1px solid #eee; display:flex; align-items:center; gap:10px">
+        <strong id="dlgTitle" style="font-size: 14px">新增/编辑</strong>
+        <span class="spacer"></span>
+        <button id="dlgClose" class="secondary" value="close" data-i18n-key="common.close">关闭</button>
+      </div>
+      <div style="padding: 14px">
+        <div class="row">
+          <div class="field" style="flex: 1">
+            <label for="f_group" data-i18n-key="projects.form.group">所属组</label>
+            <select id="f_group"></select>
+          </div>
+          <div class="field" style="flex: 1">
+            <label for="f_name" data-i18n-key="projects.form.name">项目名称</label>
+            <input id="f_name" type="text" placeholder="例如：某某执行项目" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="f_acceptedAt" data-i18n-key="projects.form.acceptedAt">立项时间</label>
+            <input id="f_acceptedAt" type="date" />
+          </div>
+          <div class="field">
+            <label for="f_codeSource" data-i18n-key="projects.form.codeSource">编号来源</label>
+            <select id="f_codeSource">
+              <option value="AUTO" data-i18n-key="projects.form.codeSourceAuto">自动生成</option>
+              <option value="MANUAL" data-i18n-key="projects.form.codeSourceManual">手动填写</option>
+            </select>
+          </div>
+          <div class="field" style="flex: 1">
+            <label for="f_manualCode" data-i18n-key="projects.form.manualCode">手动编号</label>
+            <input id="f_manualCode" type="text" placeholder="例如：X2026010001" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex: 1">
+            <label for="f_entrustor" data-i18n-key="projects.form.entrustor">委托人</label>
+            <input id="f_entrustor" type="text" placeholder="例如：某某公司" />
+          </div>
+          <div class="field">
+            <label for="f_progress" data-i18n-key="projects.form.progressStatus">进度状态</label>
+            <select id="f_progress">
+              <option value="NOT_STARTED" data-i18n-key="projects.progress.notStarted">未开始</option>
+              <option value="IN_PROGRESS" data-i18n-key="projects.progress.inProgress">进行中</option>
+              <option value="STALLED" data-i18n-key="projects.progress.stalled">暂停/阻塞</option>
+              <option value="DONE" data-i18n-key="projects.progress.done">已完成</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f_targetDate" data-i18n-key="projects.form.targetDate">目标日期</label>
+            <input id="f_targetDate" type="date" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field" style="flex: 1">
+            <label for="f_owner" data-i18n-key="projects.form.owner">负责人</label>
+            <select id="f_owner"></select>
+          </div>
+          <div class="field" style="flex: 1">
+            <label for="f_lead" data-i18n-key="projects.form.lead">主办</label>
+            <select id="f_lead"></select>
+          </div>
+          <div class="field" style="flex: 1">
+            <label for="f_assist" data-i18n-key="projects.form.assist">协办</label>
+            <select id="f_assist"></select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f_note" data-i18n-key="projects.form.note">备注</label>
+          <input id="f_note" type="text" placeholder="可选" />
+        </div>
+
+        <div class="actions" style="margin-top: 12px">
+          <button id="dlgSave" value="default" data-i18n-key="common.save">保存</button>
+          <span id="dlgMsg" class="note"></span>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
   <script type="module">
     import { initUiI18n, applyI18n, t, getToken, clearToken, authHeader, formatDate, renderError, parseErrorBodyText } from '/ui/app.js';
@@ -59,15 +173,148 @@
 
     $('logoutBtn').addEventListener('click', logout);
 
+    let allProjects = [];
+    let meta = null;
+    let dialogMode = 'create';
+    let editingProjectId = null;
+    let editingProject = null;
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function normalize(s) {
+      return String(s ?? '').trim().toLowerCase();
+    }
+
+    function updateStatusOptions() {
+      const sel = $('status');
+      const values = Array.from(new Set(allProjects.map(p => String(p.status ?? '')).filter(v => v)));
+      sel.innerHTML = `<option value="">${escapeHtml(t('common.all'))}</option>`;
+      for (const v of values) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      }
+    }
+
+    function progressLabel(v) {
+      const s = String(v ?? '').toUpperCase();
+      if (s === 'NOT_STARTED') return t('projects.progress.notStarted');
+      if (s === 'IN_PROGRESS') return t('projects.progress.inProgress');
+      if (s === 'STALLED') return t('projects.progress.stalled');
+      if (s === 'DONE') return t('projects.progress.done');
+      return s || '-';
+    }
+
+    function safeDate(d) {
+      if (!d) return '';
+      return String(d).slice(0, 10);
+    }
+
+    function render() {
+      const q = normalize($('q').value);
+      const status = $('status').value;
+
+      let filtered = allProjects;
+      if (status) {
+        filtered = filtered.filter(p => String(p.status ?? '') === status);
+      }
+      if (q) {
+        filtered = filtered.filter(p => {
+          const projectId = String(p.projectId ?? p.id ?? '');
+          const projectCode = String(p.projectCode ?? p.code ?? '');
+          const name = String(p.name ?? '');
+          const latestCaseCode = String(p.latestCaseCode ?? '');
+          const latestCaseTitle = String(p.latestCaseTitle ?? '');
+          return normalize(projectId).includes(q)
+            || normalize(projectCode).includes(q)
+            || normalize(name).includes(q)
+            || normalize(latestCaseCode).includes(q)
+            || normalize(latestCaseTitle).includes(q);
+        });
+      }
+
+      const tbody = $('tbl').querySelector('tbody');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="13" class="note">${escapeHtml(t('common.empty'))}</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const p of filtered) {
+        const projectId = p.projectId ?? p.id ?? '';
+        const projectCode = p.projectCode ?? p.code ?? '';
+        const name = p.name ?? '';
+        const status = p.status ?? '';
+        const entrustor = p.entrustor ?? '';
+        const progressStatus = p.progressStatus ?? '';
+        const targetDate = safeDate(p.targetDate);
+        const acceptedAt = safeDate(p.acceptedAt);
+        const ownerName = p.ownerName ?? '';
+        const leadName = p.leadName ?? '';
+        const assistName = p.assistName ?? '';
+        const updatedAt = formatDate(p.updatedAt ?? p.createdAt);
+
+        const latestCaseId = p.latestCaseId ?? '';
+        const latestCaseCode = p.latestCaseCode ?? '';
+        const latestCaseTitle = p.latestCaseTitle ?? '';
+
+        let latestCaseHtml = '-';
+        if (latestCaseId) {
+          const label = `${latestCaseCode || latestCaseId}${latestCaseTitle ? ' ' + latestCaseTitle : ''}`;
+          latestCaseHtml = `<a href="/ui/case_detail.html?caseId=${encodeURIComponent(latestCaseId)}">${escapeHtml(label)}</a>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(projectCode)}</td>
+          <td>${escapeHtml(projectId)}</td>
+          <td>${escapeHtml(name)}</td>
+          <td>${escapeHtml(entrustor)}</td>
+          <td>${escapeHtml(progressLabel(progressStatus))}</td>
+          <td>${escapeHtml(targetDate || '-') }</td>
+          <td>${escapeHtml(ownerName || '-')}</td>
+          <td>${escapeHtml(leadName || '-')}</td>
+          <td>${escapeHtml(assistName || '-')}</td>
+          <td>${escapeHtml(status)}</td>
+          <td>${escapeHtml(acceptedAt || '-') }</td>
+          <td>${escapeHtml(updatedAt)}</td>
+          <td>${latestCaseHtml}</td>
+          <td>
+            <a href="/ui/project_detail.html?projectId=${encodeURIComponent(projectId)}">${escapeHtml(t('common.viewDetail'))}</a>
+            &nbsp;|&nbsp;
+            <button class="secondary" data-act="edit" data-id="${escapeHtml(projectId)}">${escapeHtml(t('common.edit'))}</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    $('q').addEventListener('input', render);
+    $('status').addEventListener('change', render);
+
     async function loadProjects() {
-      const t = getToken();
-      if (!t) {
+      const token = getToken();
+      if (!token) {
         window.location.replace('/ui/login.html?reason=unauthorized');
         return;
       }
 
       showError('');
       showForbidden('');
+
+      const tbody = $('tbl').querySelector('tbody');
+      tbody.innerHTML = `<tr><td colspan="13" class="note">${escapeHtml(t('common.loading'))}</td></tr>`;
 
       let res;
       try {
@@ -109,45 +356,252 @@
         return;
       }
 
-      const tbody = $('tbl').querySelector('tbody');
-      tbody.innerHTML = '';
+      allProjects = arr;
+      updateStatusOptions();
+      render();
+    }
 
-      if (arr.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="5" class="note">${escapeHtml(t('common.empty'))}</td>`;
-        tbody.appendChild(tr);
+    function ensureDialog() {
+      const dlg = $('dlg');
+      if (!dlg) throw new Error('弹窗未找到');
+      return dlg;
+    }
+
+    function setDialogMessage(msg) {
+      $('dlgMsg').textContent = msg || '';
+    }
+
+    function fillSelect(sel, options, current) {
+      sel.innerHTML = '';
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = t('common.none');
+      sel.appendChild(empty);
+      for (const o of options) {
+        const opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.label;
+        if (current && String(current) === String(o.value)) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function loadMeta() {
+      let res;
+      try {
+        res = await fetch('/workbench/projects/meta', { headers: authHeader() });
+      } catch (e) {
+        showError(`${t('common.requestFailed')}：${e?.message || e}`);
+        return;
+      }
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        showError(`加载元数据失败（HTTP ${res.status}）：${err.message || text}`, err.debug || text);
+        return;
+      }
+      try {
+        meta = JSON.parse(text);
+      } catch {
+        showError(`${t('common.responseNotJson')}：${text}`, text);
+      }
+    }
+
+    async function loadMembers(groupId) {
+      let res;
+      try {
+        res = await fetch(`/workbench/groups/${encodeURIComponent(groupId)}/members`, { headers: authHeader() });
+      } catch (e) {
+        throw new Error(`${t('common.requestFailed')}：${e?.message || e}`);
+      }
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        throw new Error(`加载成员失败（HTTP ${res.status}）：${err.message || text}`);
+      }
+      const arr = JSON.parse(text);
+      return Array.isArray(arr) ? arr : [];
+    }
+
+    async function populateMemberSelects(groupId, current) {
+      const members = await loadMembers(groupId);
+      const opts = members.map(m => ({
+        value: m.userId,
+        label: `${m.username || m.userId}${m.phone ? '（' + m.phone + '）' : ''}`
+      }));
+      fillSelect($('f_owner'), opts, current?.ownerUserId);
+      fillSelect($('f_lead'), opts, current?.leadUserId);
+      fillSelect($('f_assist'), opts, current?.assistUserId);
+    }
+
+    function openCreateDialog() {
+      dialogMode = 'create';
+      editingProjectId = null;
+      editingProject = null;
+      $('dlgTitle').textContent = t('projects.create');
+      setDialogMessage('');
+
+      $('f_name').value = '';
+      $('f_acceptedAt').value = new Date().toISOString().slice(0, 10);
+      $('f_codeSource').value = 'AUTO';
+      $('f_manualCode').value = '';
+      $('f_entrustor').value = '';
+      $('f_progress').value = 'NOT_STARTED';
+      $('f_targetDate').value = '';
+      $('f_note').value = '';
+
+      const groups = (meta?.groups ?? []).map(g => ({ value: g.groupId, label: g.groupName }));
+      const sel = $('f_group');
+      sel.innerHTML = '';
+      for (const g of groups) {
+        const opt = document.createElement('option');
+        opt.value = g.value;
+        opt.textContent = g.label;
+        sel.appendChild(opt);
+      }
+      if (groups.length > 0) sel.value = groups[0].value;
+
+      // members will be loaded on group change
+      $('f_owner').innerHTML = '';
+      $('f_lead').innerHTML = '';
+      $('f_assist').innerHTML = '';
+
+      ensureDialog().showModal();
+      $('f_group').dispatchEvent(new Event('change'));
+    }
+
+    async function openEditDialog(project) {
+      dialogMode = 'edit';
+      editingProjectId = project.projectId;
+      editingProject = project;
+      $('dlgTitle').textContent = t('common.edit');
+      setDialogMessage('');
+
+      const groups = (meta?.groups ?? []).map(g => ({ value: g.groupId, label: g.groupName }));
+      const sel = $('f_group');
+      sel.innerHTML = '';
+      for (const g of groups) {
+        const opt = document.createElement('option');
+        opt.value = g.value;
+        opt.textContent = g.label;
+        sel.appendChild(opt);
+      }
+      sel.value = String(project.groupId || '');
+      sel.disabled = true;
+
+      $('f_name').value = project.name ?? '';
+      $('f_name').disabled = true;
+      $('f_acceptedAt').value = safeDate(project.acceptedAt) || '';
+      $('f_acceptedAt').disabled = true;
+      $('f_codeSource').value = 'AUTO';
+      $('f_codeSource').disabled = true;
+      $('f_manualCode').value = '';
+      $('f_manualCode').disabled = true;
+
+      $('f_entrustor').value = project.entrustor ?? '';
+      $('f_progress').value = String(project.progressStatus ?? 'NOT_STARTED').toUpperCase();
+      $('f_targetDate').value = safeDate(project.targetDate) || '';
+      $('f_note').value = project.note ?? '';
+
+      ensureDialog().showModal();
+      try {
+        await populateMemberSelects(String(project.groupId || ''), project);
+      } catch (e) {
+        setDialogMessage(e?.message || String(e));
+      }
+    }
+
+    $('createBtn').addEventListener('click', () => openCreateDialog());
+
+    $('f_group').addEventListener('change', async () => {
+      const groupId = $('f_group').value;
+      if (!groupId) return;
+      try {
+        await populateMemberSelects(groupId, dialogMode === 'edit' ? editingProject : null);
+      } catch (e) {
+        setDialogMessage(e?.message || String(e));
+      }
+    });
+
+    $('f_codeSource').addEventListener('change', () => {
+      const v = $('f_codeSource').value;
+      $('f_manualCode').disabled = v !== 'MANUAL';
+      if (v !== 'MANUAL') $('f_manualCode').value = '';
+    });
+
+    $('dlgSave').addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      setDialogMessage(t('common.saving'));
+
+      const groupId = $('f_group').value;
+      const bodyCreate = {
+        groupId,
+        name: $('f_name').value,
+        acceptedAt: $('f_acceptedAt').value,
+        codeSource: $('f_codeSource').value,
+        manualCode: $('f_manualCode').value,
+        entrustor: $('f_entrustor').value,
+        progressStatus: $('f_progress').value,
+        targetDate: $('f_targetDate').value || null,
+        ownerUserId: $('f_owner').value || null,
+        leadUserId: $('f_lead').value || null,
+        assistUserId: $('f_assist').value || null,
+        note: $('f_note').value
+      };
+      const bodyEdit = {
+        entrustor: $('f_entrustor').value,
+        progressStatus: $('f_progress').value,
+        targetDate: $('f_targetDate').value || null,
+        ownerUserId: $('f_owner').value || null,
+        leadUserId: $('f_lead').value || null,
+        assistUserId: $('f_assist').value || null,
+        note: $('f_note').value
+      };
+
+      let res;
+      try {
+        if (dialogMode === 'create') {
+          res = await fetch('/workbench/projects', {
+            method: 'POST',
+            headers: { ...authHeader(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyCreate)
+          });
+        } else {
+          res = await fetch(`/workbench/projects/${encodeURIComponent(editingProjectId)}`, {
+            method: 'PATCH',
+            headers: { ...authHeader(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyEdit)
+          });
+        }
+      } catch (e) {
+        setDialogMessage(`${t('common.requestFailed')}：${e?.message || e}`);
         return;
       }
 
-      for (const p of arr) {
-        const projectId = p.projectId ?? p.id ?? '';
-        const name = p.name ?? '';
-        const status = p.status ?? '';
-        const createdAt = formatDate(p.createdAt);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(projectId)}</td>
-          <td>${escapeHtml(name)}</td>
-          <td>${escapeHtml(status)}</td>
-          <td>${escapeHtml(createdAt)}</td>
-          <td><a href="/ui/project_detail.html?projectId=${encodeURIComponent(projectId)}">${escapeHtml(t('common.viewDetail'))}</a></td>
-        `;
-        tbody.appendChild(tr);
+      const text = await res.text();
+      if (!res.ok) {
+        const err = parseErrorBodyText(text);
+        setDialogMessage(`保存失败（HTTP ${res.status}）：${err.message || text}`);
+        return;
       }
-    }
 
-    function escapeHtml(s) {
-      return String(s ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-    }
+      setDialogMessage(t('common.saved'));
+      ensureDialog().close();
+      await loadProjects();
+    });
+
+    $('tbl').addEventListener('click', async (ev) => {
+      const btn = ev.target?.closest('button[data-act="edit"]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      const p = allProjects.find(x => String(x.projectId ?? x.id ?? '') === String(id));
+      if (!p) return;
+      await openEditDialog(p);
+    });
 
     await initUiI18n();
     applyI18n(document);
+    await loadMeta();
     loadProjects();
   </script>
 </body>

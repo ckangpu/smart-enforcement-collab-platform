@@ -26,6 +26,14 @@
             <option value="" data-i18n-key="common.all">全部</option>
           </select>
         </div>
+
+        <div class="field" style="min-width: 260px">
+          <label data-i18n-key="tasks.filterOverdueOnly">仅看超期</label>
+          <div style="display:flex; gap:8px; align-items:center; height: 34px">
+            <input id="overdueOnly" type="checkbox" style="min-width: 0; width: 18px; height: 18px" />
+            <span class="note" data-i18n-key="tasks.overdueHint">说明：以“截止时间早于当前时间”判断。</span>
+          </div>
+        </div>
       </div>
 
       <table class="table" id="tbl">
@@ -63,9 +71,26 @@
 
     let allTasks = [];
 
+    function isOverdue(task) {
+      if (!task) return false;
+      const status = String(task.status ?? '').trim().toUpperCase();
+      if (status === 'DONE') return false;
+
+      const v = task.planEnd ?? task.dueAt;
+      if (!v) return false;
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return false;
+      return d.getTime() < Date.now();
+    }
+
     function render() {
       const status = $('status').value;
-      const filtered = status ? allTasks.filter(t => String(t.status ?? '') === status) : allTasks;
+      const overdueOnly = $('overdueOnly').checked;
+
+      let filtered = status ? allTasks.filter(t => String(t.status ?? '') === status) : allTasks;
+      if (overdueOnly) {
+        filtered = filtered.filter(isOverdue);
+      }
 
       const tbody = $('tbl').querySelector('tbody');
       tbody.innerHTML = '';
@@ -85,7 +110,7 @@
           <td>${escapeHtml(t.status ?? '')}</td>
           <td>${escapeHtml(t.caseId ?? '')}</td>
           <td>${escapeHtml(t.projectId ?? '')}</td>
-          <td>${escapeHtml(formatDate(t.dueAt))}</td>
+          <td>${escapeHtml(formatDate(t.planEnd ?? t.dueAt))}</td>
         `;
         tbody.appendChild(tr);
       }
@@ -104,9 +129,13 @@
     }
 
     $('status').addEventListener('change', render);
+    $('overdueOnly').addEventListener('change', render);
 
     async function loadTasks() {
       showError('');
+
+      const tbody = $('tbl').querySelector('tbody');
+      tbody.innerHTML = `<tr><td colspan="6" class="note">${escapeHtml(t('common.loading'))}</td></tr>`;
 
       let res;
       try {
