@@ -62,6 +62,20 @@ jobs:
 curl.exe -sS -H "Authorization: Bearer <INTERNAL_TOKEN>" http://localhost:8080/projects/<PROJECT_ID>/a4.pdf -o project_a4.pdf
 ```
 
+## 最终验收（可复制 PowerShell）
+
+所有用户可见内容必须中文（接口 message、UI 文案、脚本输出）。请先执行中文化检查，再跑单测与 smoke。
+
+UI 验收路径：`/ui/login.html`。
+案件入口：在“我的项目”项目表中点击案件编号/名称进入 `case_detail.html`。
+
+```powershell
+mvn -f src/api/pom.xml test
+mvn -f src/api/src/worker/pom.xml test
+pwsh ./scripts/check-ui-chinese.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke.ps1 -SkipCompose -DebugLogs
+```
+
 ## 3. 文档入口（必须用相对路径链接）
 
 - 本地部署：docs/DEPLOY_LOCAL.md
